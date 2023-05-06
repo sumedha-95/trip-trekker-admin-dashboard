@@ -29,9 +29,13 @@ import ReportButton from "../components/common/ReportButton";
 import ProductCard from "../components/common/ProductCard";
 import ProductDelete from "../components/common/ProductDelete";
 import { useParams } from "react-router-dom";
-import EditButton from "../components/common/EditButton";
-import DeleteButton from "../components/common/DeleteButton";
 import { useSelector } from "react-redux";
+import { createHotel, deleteHotel, getPaginatedHotels } from "../service/hotel.service";
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { DesktopTimePicker } from '@mui/x-date-pickers';
+import Hotel from '../models/hotel';
+import moment from 'moment-timezone';
 
 //table columns
 const tableColumns = [ 
@@ -41,34 +45,39 @@ const tableColumns = [
     align: "center",
   },
   {
-    id: "unit",
-    label: "UoM",
+    id: "registrationNumber",
+    label: "Reg.Num",
     align: "left",
   },
   {
-    id: "unitAmount",
-    label: "Units",
-    align: "left",
-  },
-    {
-    id: "price",
-    label: "Price",
+    id: "address",
+    label: "Address",
     align: "left",
   },
   {
-    id: "seller",
-    label: "Seller",
+    id: "email",
+    label: "Email",
     align: "left",
   },
   {
-    id: "description",
-    label: "Description",
+    id: "contactNumber",
+    label: "Con.Num",
     align: "left",
   },
   {
-    id: "updatedAt",
-    label: "Date",
+    id: "hotelFacilities",
+    label: "Facilities",
     align: "left",
+  },
+  {
+    id: "openHours",
+    label: "Open Hours",
+    align: "left",
+  },
+  {
+    id: "closeHours",
+    label: "Close Hours",
+    align:"left",
   },
   {
     id: "action",
@@ -79,9 +88,8 @@ const tableColumns = [
 
 const Hotels = () => {
   const { id } = useParams();
-  console.log("ado weda karapan",id);
   const navigate = useNavigate();
-  const [inputs, setInputs] = useState('');
+  const [inputs, setInputs] = useState(Hotel);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
@@ -118,20 +126,121 @@ const Hotels = () => {
 
   const authState = useSelector((state) => state.auth);
 
-    useEffect(() => {
-
-    if (authState.user.role == 'seller') {
-      setisSeller(true)
+  const reqBody = {
+    ...Hotel, coordinates: [Hotel.location.lng, Hotel.location.lat],
+    location: {
+      lng: inputs.location.lng,
+      lat: inputs.location.lat
+    },
+    
+    openHours: {
+      open: moment(inputs.openHours.open).toISOString(),
+      close: moment(inputs.openHours.close).toISOString()
     }
-    
-    if (!window.location.href.includes("auth") && !authState?.isLoggedIn)
-      window.location.replace("/auth/sign-in");
-  }, [authState.isLoggedIn]);
-
-   
-  const handleSubmit = () => {
-    
   }
+  
+  console.log("reqBody",reqBody);
+  
+  // edit hotel
+  const handleEdit = () => {
+  setShowUpdatePopup(true);
+};
+  //delet hotel
+   const handleDelete = (id) => {
+    deleteHotelSubmit(id);
+  };
+
+  //delete products
+  const deleteHotelSubmit = async (id) => {
+    setIsLoading(true);
+
+    popDangerPrompt("DELETE", "Are You sure you want to delete this hotel!" ,"error").then( async (res) =>{
+      if (res.isConfirmed) {
+        
+      const response = await deleteHotel(id);
+    
+    if (response.success) {
+      response?.data?.message &&
+        popAlert("Success!", response?.data?.message, "success").then((res) => {
+            setShowPopup(true);
+          
+        });
+      window.location.reload();
+    } else {
+      response?.data?.message &&
+        popAlert("Error!", response?.data?.message, "error");
+      response?.data?.data && setErrors(response.data.data);
+    }
+  }});
+  setIsLoading(false); 
+  };
+  
+  //get paginated Hotel
+  useEffect(() => {
+    let unmounted = false;
+
+    if (!unmounted) setIsLoading(true);
+
+    const fetchAndSet = async () => {
+      const response = await getPaginatedHotels(
+        keyword,
+        pagination.page,
+        pagination.limit,
+        pagination.orderBy,
+    
+      );
+        if (response.success) {
+        if (!response.data) return;
+
+        let tableDataArr = [];
+        for (const hotel of response.data.content) {
+          tableDataArr.push({
+            name: hotel.name,
+            address: hotel.address,
+            registrationNumber: hotel.registrationNumber,
+            email: hotel.email,
+            contactNumber: hotel.contactNumber,
+            hotelFacilities: hotel.hotelFacilities.map(item => item).join(", "),
+            openHours: hotel.openHours.open.substring(11, 16),
+            closeHours: hotel.openHours.close.substring(11, 16),
+            action: <TableAction id={hotel._id} onEdit={handleEdit}  onDelete={handleDelete}/>,
+          });
+        }
+        if (!unmounted) {
+          setTotalElements(response.data.totalElements);
+          setTableRows(tableDataArr);
+        }
+      } else {
+        console.error(response?.data);
+      }
+      if (!unmounted) setIsLoading(false);
+    };
+    fetchAndSet();
+    return () => {
+      unmounted = true;
+    };
+  }, [pagination, refresh ,keyword]);
+
+  const handleSubmit = async (e) => {
+    console.log("Hi");
+    e.preventDefault();
+    setLoading(true);
+
+    const response = await createHotel(inputs);
+
+    if (response.success) {
+      setRefresh(!refresh);
+      response?.data?.message &&
+        popAlert("Success!", response?.data?.message, "success").then((res) => {
+          setShowPopup(false);
+        });
+    } else {
+      response?.data?.message &&
+        popAlert("Error!", response?.data?.message, "error");
+      response?.data?.data && setErrors(response.data.data);
+    }
+    setLoading(false);
+  };
 
   const handleClear = () => {
     
@@ -145,7 +254,7 @@ const Hotels = () => {
     
   }
 
-    return (
+  return (
     <React.Fragment>
       <Typography variant="h4" fontWeight="bold" sx={{ mb: 2 }}>
         Hotel
@@ -187,7 +296,7 @@ const Hotels = () => {
             mt: "3%",
           }}
         >
-           <ReusableTable
+            <ReusableTable
             rows={tableRows}
             columns={tableColumns}
             totalElements={totalElements}
@@ -195,7 +304,7 @@ const Hotels = () => {
             page={pagination.page}
             onPageChange={handlePageChange}
             onLimitChange={handleLimitChange}
-          /> 
+              />                
         </Box>
       )}
 
@@ -212,7 +321,7 @@ const Hotels = () => {
               <TextField
                 name="name"
                 variant="filled"
-                label="Product Name"
+                label="Hotel Name"
                 fullWidth
                 value={inputs.name}
                 onChange={(e) =>
@@ -226,103 +335,223 @@ const Hotels = () => {
                 <Typography color="error">{errors["name"]}</Typography>
               )}
             </Box>
+
             <Box sx={{ mb: 1 }}>
               <TextField
-                name="description"
+                name="registrationNumber"
                 variant="filled"
-                label="Product Description"
+                label="Hotel Registration Number"
                 fullWidth
-                value={inputs.description}
+                value={inputs.registrationNumber}
                 onChange={(e) =>
                   setInputs({
                     ...inputs,
-                    description: e.target.value,
+                    registrationNumber: e.target.value,
                   })
                 }
               />
-              {errors["description"] && (
+              {errors["registrationNumber"] && (
                 <Typography color="error">
-                  {errors["description"]}
+                  {errors["registrationNumber"]}
                 </Typography>
               )}
             </Box>
+
             <Box sx={{ mb: 1 }}>
               <TextField
-                name="price"
+                name="address"
                 variant="filled"
-                label="Product Price"
+                label="Hotel Address"
                 fullWidth
-                value={inputs.price}
-                type="number"
-                InputProps={{ inputProps: { min: 0 }, shrink: "true" }}
+                value={inputs.address}
                 onChange={(e) =>
                   setInputs({
                     ...inputs,
-                    price: e.target.value,
+                    address: e.target.value,
                   })
                 }
               />
-              {errors["price"] && (
-                <Typography color="error">{errors["price"]}</Typography>
+              {errors["address"] && (
+                <Typography color="error">{errors["address"]}</Typography>
               )}
             </Box>
 
             <Box sx={{ mb: 1 }}>
               <TextField
-                name="unit"
+                name="contactNumber"
                 variant="filled"
-                label="Units"
+                label="Contact Number"
                 fullWidth
-                value={inputs.unit}
-                type="number"
-                InputProps={{ inputProps: { min: 0 }, shrink: "true" }}
+                value={inputs.contactNumber}
                 onChange={(e) =>
                   setInputs({
                     ...inputs,
-                    unit: e.target.value,
+                    contactNumber: e.target.value,
                   })
                 }
               />
-              {errors["unit"] && (
-                <Typography color="error">{errors["unit"]}</Typography>
+              {errors["contactNumber"] && (
+                <Typography color="error">{errors["contactNumber"]}</Typography>
               )}
             </Box>
 
-            <Box sx={{ mb: 1 }}>
-              <TextField
-                name="unitAmount"
-                variant="filled"
-                label="Unit Amount"
-                fullWidth
-                value={inputs.unitAmount}
-                type="number"
-                InputProps={{ inputProps: { min: 0 }, shrink: "true" }}
-                onChange={(e) =>
-                  setInputs({
-                    ...inputs,
-                    unitAmount: e.target.value,
-                  })
-                }
-              />
-              {errors["unitAmount"] && (
-                <Typography color="error">{errors["unitAmount"]}</Typography>
-              )}
+            <Box sx={{ mb: 1, }}>
+                <TextField
+                  name="email"
+                  variant="filled"
+                  label="Email"
+                  fullWidth
+                  value={inputs.email}
+                  onChange={(e) =>
+                    setInputs({
+                      ...inputs,
+                      email: e.target.value,
+                    })
+                  }
+                />
+                {errors["email"] && (
+                  <Typography color="error">{errors["email"]}</Typography>
+                )}
             </Box>
-           <Box sx={{ mb: 1 }}>
-  <Typography>File</Typography>
-  <input
-    name="file"
-    type="file"
-    onChange={(e) => {
-      const file = e.target.files[0];
+
+  <Box sx={{ mb: 1 }}>
+  <LocalizationProvider dateAdapter={AdapterDayjs}>
+    <DesktopTimePicker
+      name="openHours"
+      variant="filled"
+      label="Open Hours"
+      slotProps={{ textField: { fullWidth: true } }}
+      value={inputs.openHours.open ? moment(inputs.openHours.open).tz('UTC') : null}
+      inputFormat="YYYY-MM-DD hh:mm A"
+      onChange={(e) => {
+        const selectedTime = moment(e).tz('UTC').format();
+        setInputs({
+          ...inputs,
+          openHours: { ...inputs.openHours,open: selectedTime }
+        });
+      }}
+      renderInput={(props) => (
+        <>
+          <TextField
+            {...props}
+            InputProps={{ shrink: true }}
+            inputProps={{ min: 0 }}
+          />
+          {errors["openHours"] && (
+            <Typography color="error">{errors["openHours"]}</Typography>
+          )}
+        </>
+      )}
+    />
+  </LocalizationProvider>
+</Box>
+
+<Box sx={{ mb: 1 }}>
+  <LocalizationProvider dateAdapter={AdapterDayjs}>
+    <DesktopTimePicker
+      name="closeHours"
+      variant="filled"
+      label="Close Hours"
+      slotProps={{ textField: { fullWidth: true } }}
+      value={inputs.openHours.close = moment(inputs.openHours.close).tz('UTC')}
+      inputFormat="YYYY-MM-DD hh:mm A"
+      onChange={(e) => {
+        const selectedTime = moment(e).tz('UTC').format();
+        setInputs({
+          ...inputs,
+          openHours: { ...inputs.openHours, close: selectedTime }
+        });
+      }}
+      renderInput={(props) => (
+        <>
+          <TextField
+            {...props}
+            InputProps={{ shrink: true }}
+            inputProps={{ min: 0 }}
+          />
+          {errors["openHours"] && (
+            <Typography color="error">{errors["openHours"]}</Typography>
+          )}
+        </>
+      )}
+    />
+  </LocalizationProvider>
+</Box>
+    <Box sx={{ mb: 1 }}>
+        <TextField
+          name="hotelFacilities"
+          variant="filled"
+          label="HotelFacilities (Separated by comma)"
+          fullWidth
+          value={inputs.hotelFacilities}
+          onChange={(e) =>
+              setInputs({
+                ...inputs,
+               hotelFacilities: e.target.value.split(",").map((f) => f.trim()),
+              })
+            }
+        />
+      </Box>
+<Box sx={{ mb: 1 }}>
+  <TextField
+    name="location.lng"
+    variant="filled"
+    label="Longitude"
+    fullWidth
+    value={inputs.location.lng}
+    onChange={(e) =>
       setInputs({
         ...inputs,
-        file: file,
+        location: {
+          ...inputs.location,
+          lng: Number(e.target.value)
+        }
+      })
+    }
+  />
+  {errors["location"] && (
+    <Typography color="error">{errors["location"]}</Typography>
+  )}
+</Box>
+
+<Box sx={{ mb: 1 }}>
+  <TextField
+    name="location.lat"
+    variant="filled"
+    label="Latitude"
+    fullWidth
+    value={inputs.location.lat}
+    onChange={(e) =>
+      setInputs({
+        ...inputs,
+        location: {
+          ...inputs.location,
+          lat: Number(e.target.value)
+        }
+      })
+    }
+  />
+  {errors["location"] && (
+    <Typography color="error">{errors["location"]}</Typography>
+  )}
+</Box>
+
+                 
+<Box sx={{ mb: 1 }}>
+  <Typography>File</Typography>
+  <input
+    name="files"
+                type="file"
+                multiple
+    onChange={(e) => {
+        setInputs({
+        ...inputs,
+        files: Array.from(e.target.files),
       });
     }}
   />
-  {errors["file"] && (
-    <Typography color="error">{errors["file"]}</Typography>
+  {errors["files"] && (
+    <Typography color="error">{errors["files"]}</Typography>
   )}
 </Box>
 
@@ -350,15 +579,14 @@ const Hotels = () => {
       </Popup>
   
       {/* custom popup */}
-            <Popup title='Update Hotel' width={800} show={showUpdatePopup} onClose={handleUpdatePopupClose}>
-        <Box sx={{ mb: 1 }}>
-        
-          <form onSubmit={updateSubmit} >
+      <Popup title='Update Hotel' width={800} show={showUpdatePopup} onClose={handleUpdatePopupClose}>
+         <Box sx={{ mb: 1 }}>
+          <form onSubmit={updateSubmit}>
             <Box sx={{ mb: 1 }}>
               <TextField
                 name="name"
                 variant="filled"
-                label="Product Name"
+                label="Hotel Name"
                 fullWidth
                 value={inputs.name}
                 onChange={(e) =>
@@ -372,92 +600,232 @@ const Hotels = () => {
                 <Typography color="error">{errors["name"]}</Typography>
               )}
             </Box>
+
             <Box sx={{ mb: 1 }}>
               <TextField
-                name="description"
+                name="registrationNumber"
                 variant="filled"
-                label="Product Description"
+                label="Hotel Registration Number"
                 fullWidth
-                value={inputs.description}
+                value={inputs.registrationNumber}
                 onChange={(e) =>
                   setInputs({
                     ...inputs,
-                    description: e.target.value,
+                    registrationNumber: e.target.value,
                   })
                 }
               />
-              {errors["description"] && (
+              {errors["registrationNumber"] && (
                 <Typography color="error">
-                  {errors["description"]}
+                  {errors["registrationNumber"]}
                 </Typography>
               )}
             </Box>
+
             <Box sx={{ mb: 1 }}>
               <TextField
-                name="price"
+                name="address"
                 variant="filled"
-                label="Product Price"
+                label="Hotel Address"
                 fullWidth
-                value={inputs.price}
-                type="number"
-                InputProps={{ inputProps: { min: 0 }, shrink: "true" }}
+                value={inputs.address}
                 onChange={(e) =>
                   setInputs({
                     ...inputs,
-                    price: e.target.value,
+                    address: e.target.value,
                   })
                 }
               />
-              {errors["price"] && (
-                <Typography color="error">{errors["price"]}</Typography>
-              )}
-            </Box>
-            <Box sx={{ mb: 1 }}>
-              <TextField
-                name="unit"
-                variant="filled"
-                label="Units"
-                fullWidth
-                value={inputs.unit}
-                type="number"
-                InputProps={{ inputProps: { min: 0 }, shrink: "true" }}
-                onChange={(e) =>
-                  setInputs({
-                    ...inputs,
-                    unit: e.target.value,
-                  })
-                }
-              />
-              {errors["unit"] && (
-                <Typography color="error">{errors["unit"]}</Typography>
-              )}
-            </Box>
-            <Box sx={{ mb: 1 }}>
-              <TextField
-                name="unitAmount"
-                variant="filled"
-                label="Unit Amount"
-                fullWidth
-                value={inputs.unitAmount}
-                type="number"
-                InputProps={{ inputProps: { min: 0 }, shrink: "true" }}
-                onChange={(e) =>
-                  setInputs({
-                    ...inputs,
-                    unitAmount: e.target.value,
-                  })
-                }
-              />
-              {errors["unitAmount"] && (
-                <Typography color="error">{errors["unitAmount"]}</Typography>
+              {errors["address"] && (
+                <Typography color="error">{errors["address"]}</Typography>
               )}
             </Box>
 
+            <Box sx={{ mb: 1 }}>
+              <TextField
+                name="contactNumber"
+                variant="filled"
+                label="Contact Number"
+                fullWidth
+                value={inputs.contactNumber}
+                onChange={(e) =>
+                  setInputs({
+                    ...inputs,
+                    contactNumber: e.target.value,
+                  })
+                }
+              />
+              {errors["contactNumber"] && (
+                <Typography color="error">{errors["contactNumber"]}</Typography>
+              )}
+            </Box>
+
+            <Box sx={{ mb: 1, }}>
+                <TextField
+                  name="email"
+                  variant="filled"
+                  label="Email"
+                  fullWidth
+                  value={inputs.email}
+                  onChange={(e) =>
+                    setInputs({
+                      ...inputs,
+                      email: e.target.value,
+                    })
+                  }
+                />
+                {errors["email"] && (
+                  <Typography color="error">{errors["email"]}</Typography>
+                )}
+            </Box>
+
+  <Box sx={{ mb: 1 }}>
+  <LocalizationProvider dateAdapter={AdapterDayjs}>
+    <DesktopTimePicker
+      name="openHours"
+      variant="filled"
+      label="Open Hours"
+      slotProps={{ textField: { fullWidth: true } }}
+      value={inputs.openHours.open ? moment(inputs.openHours.open).tz('UTC') : null}
+      inputFormat="YYYY-MM-DD hh:mm A"
+      onChange={(e) => {
+        const selectedTime = moment(e).tz('UTC').format();
+        setInputs({
+          ...inputs,
+          openHours: { ...inputs.openHours,open: selectedTime }
+        });
+      }}
+      renderInput={(props) => (
+        <>
+          <TextField
+            {...props}
+            InputProps={{ shrink: true }}
+            inputProps={{ min: 0 }}
+          />
+          {errors["openHours"] && (
+            <Typography color="error">{errors["openHours"]}</Typography>
+          )}
+        </>
+      )}
+    />
+  </LocalizationProvider>
+</Box>
+
+<Box sx={{ mb: 1 }}>
+  <LocalizationProvider dateAdapter={AdapterDayjs}>
+    <DesktopTimePicker
+      name="closeHours"
+      variant="filled"
+      label="Close Hours"
+      slotProps={{ textField: { fullWidth: true } }}
+      value={inputs.openHours.close = moment(inputs.openHours.close).tz('UTC')}
+      inputFormat="YYYY-MM-DD hh:mm A"
+      onChange={(e) => {
+        const selectedTime = moment(e).tz('UTC').format();
+        setInputs({
+          ...inputs,
+          openHours: { ...inputs.openHours, close: selectedTime }
+        });
+      }}
+      renderInput={(props) => (
+        <>
+          <TextField
+            {...props}
+            InputProps={{ shrink: true }}
+            inputProps={{ min: 0 }}
+          />
+          {errors["openHours"] && (
+            <Typography color="error">{errors["openHours"]}</Typography>
+          )}
+        </>
+      )}
+    />
+  </LocalizationProvider>
+</Box>
+    <Box sx={{ mb: 1 }}>
+        <TextField
+          name="hotelFacilities"
+          variant="filled"
+          label="HotelFacilities (Separated by comma)"
+          fullWidth
+          value={inputs.hotelFacilities}
+          onChange={(e) =>
+              setInputs({
+                ...inputs,
+               hotelFacilities: e.target.value.split(",").map((f) => f.trim()),
+              })
+            }
+        />
+      </Box>
+<Box sx={{ mb: 1 }}>
+  <TextField
+    name="location.lng"
+    variant="filled"
+    label="Longitude"
+    fullWidth
+    value={inputs.location.lng}
+    onChange={(e) =>
+      setInputs({
+        ...inputs,
+        location: {
+          ...inputs.location,
+          lng: Number(e.target.value)
+        }
+      })
+    }
+  />
+  {errors["location"] && (
+    <Typography color="error">{errors["location"]}</Typography>
+  )}
+</Box>
+
+<Box sx={{ mb: 1 }}>
+  <TextField
+    name="location.lat"
+    variant="filled"
+    label="Latitude"
+    fullWidth
+    value={inputs.location.lat}
+    onChange={(e) =>
+      setInputs({
+        ...inputs,
+        location: {
+          ...inputs.location,
+          lat: Number(e.target.value)
+        }
+      })
+    }
+  />
+  {errors["location"] && (
+    <Typography color="error">{errors["location"]}</Typography>
+  )}
+</Box>
+
+                 
+<Box sx={{ mb: 1 }}>
+  <Typography>File</Typography>
+  <input
+    name="files"
+                type="file"
+                multiple
+    onChange={(e) => {
+        setInputs({
+        ...inputs,
+        files: Array.from(e.target.files),
+      });
+    }}
+  />
+  {errors["files"] && (
+    <Typography color="error">{errors["files"]}</Typography>
+  )}
+</Box>
+
+           
             <Box sx={{ mb: 2, display: "flex", justifyContent: "flex-end" }}>
               <Button
                 type="reset"
                 variant="contained"
-                onClick={handleUpdateClear}
+                onClick={handleClear}
                 sx={{ py: 2, px: 5, mr: 2, backgroundColor: colors.grey }}
               >
                 Clear
@@ -466,14 +834,15 @@ const Hotels = () => {
                 type="submit"
                 variant="contained"
                 sx={{ py: 2, px: 5 }}
-                disabled={isLoading}
+                disabled={loading}
               >
-                {isLoading ? <CircularProgress color="secondary" /> : "Save"}
+                {loading ? <CircularProgress color="secondary" /> : "Save"}
               </Button>
             </Box>
           </form>
         </Box>
-      </Popup>      
+
+      </Popup>
       {/* custom popup */}
       <Popup width={700} show={showDeletePopup} onClose={handleDeletePopupClose}>
                 <Box sx={{ mb: 1 }}>

@@ -10,6 +10,7 @@ import { useSelector } from "react-redux";
 import AttractionForm from "../components/attraction/AttractionForm";
 import constants from "../constants";
 import { getPaginatedAttractions } from "../service/attraction.service";
+import { popDangerPrompt } from "../utils/alerts";
 
 //table columns
 const tableColumns = [
@@ -75,7 +76,30 @@ const Attractions = () => {
     setShowUpdatePopup(true);
   };
 
-  const handleDelete = (id) => {};
+  const handleDelete = (id) => {
+    popDangerPrompt(
+      "DELETE",
+      "Are You sure you want to delete this attraction!",
+      "error"
+    ).then(async (res) => {
+      if (res.isConfirmed) {
+        // const response = await deleteHotel(id);
+        // if (response.success) {
+        //   response?.data?.message &&
+        //     popAlert("Success!", response?.data?.message, "success").then(
+        //       (res) => {
+        //         setShowPopup(true);
+        //       }
+        //     );
+        //   window.location.reload();
+        // } else {
+        //   response?.data?.message &&
+        //     popAlert("Error!", response?.data?.message, "error");
+        //   response?.data?.data && setErrors(response.data.data);
+        // }
+      }
+    });
+  };
 
   const handleSearch = (input) => {
     setKeyword(input);

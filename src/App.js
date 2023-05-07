@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { Box, Grid, Stack } from "@mui/material";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Sidebar from './components/common/SideBar'
+import Sidebar from "./components/common/SideBar";
 import NavBar from "./components/common/NavBar";
 import Dashboard from "./views/Dashboard";
 import PageNotFound from "./views/PageNotFound";
@@ -12,14 +12,14 @@ import { useSelector } from "react-redux";
 import SignIn from "./views/SignIn";
 
 const App = () => {
-  // const authState = useSelector((state) => state.auth);
+  const authState = useSelector((state) => state.auth);
 
-  // useEffect(() => {
-  //   if (!window.location.href.includes("auth") && !authState?.isLoggedIn)
-  //     window.location.replace("/auth/sign-in");
-  // }, [authState.isLoggedIn]);
+  useEffect(() => {
+    if (!window.location.href.includes("auth") && !authState?.isLoggedIn)
+      window.location.replace("/auth/sign-in");
+  }, [authState.isLoggedIn]);
 
-  // if (!window.location.href.includes("auth") && authState?.isLoggedIn) {
+  if (!window.location.href.includes("auth") && authState?.isLoggedIn) {
     return (
       <React.Fragment>
         <Stack flexDirection="row">
@@ -47,14 +47,14 @@ const App = () => {
         </Stack>
       </React.Fragment>
     );
-  // } else {
-  //   return (
-  //     <BrowserRouter>
-  //       <Routes>
-  //         <Route path="/auth/sign-in" element={<SignIn />} />
-  //       </Routes>
-  //     </BrowserRouter>
-  //   );
-  // }
+  } else {
+    return (
+      <BrowserRouter>
+        <Routes>
+          <Route path="/auth/sign-in" element={<SignIn />} />
+        </Routes>
+      </BrowserRouter>
+    );
+  }
 };
 export default App;

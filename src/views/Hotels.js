@@ -30,15 +30,19 @@ import ProductCard from "../components/common/ProductCard";
 import ProductDelete from "../components/common/ProductDelete";
 import { useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { createHotel, deleteHotel, getPaginatedHotels } from "../service/hotel.service";
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { DesktopTimePicker } from '@mui/x-date-pickers';
-import Hotel from '../models/hotel';
-import moment from 'moment-timezone';
+import {
+  createHotel,
+  deleteHotel,
+  getPaginatedHotels,
+} from "../service/hotel.service";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { DesktopTimePicker } from "@mui/x-date-pickers";
+import Hotel from "../models/hotel";
+import moment from "moment-timezone";
 
 //table columns
-const tableColumns = [ 
+const tableColumns = [
   {
     id: "name",
     label: "Name",
@@ -77,7 +81,7 @@ const tableColumns = [
   {
     id: "closeHours",
     label: "Close Hours",
-    align:"left",
+    align: "left",
   },
   {
     id: "action",
@@ -106,7 +110,7 @@ const Hotels = () => {
   const [refresh, setRefresh] = useState(false);
   const [keyword, setKeyword] = useState("");
   const [selectedOrderId, setSelectedOrderId] = useState(false);
-  const [isSeller,setisSeller] = useState(false)
+  const [isSeller, setisSeller] = useState(false);
 
   const handlePageChange = (page) => {
     setPagination({ ...pagination, page: page });
@@ -127,26 +131,27 @@ const Hotels = () => {
   const authState = useSelector((state) => state.auth);
 
   const reqBody = {
-    ...Hotel, coordinates: [Hotel.location.lng, Hotel.location.lat],
+    ...Hotel,
+    coordinates: [Hotel.location.lng, Hotel.location.lat],
     location: {
       lng: inputs.location.lng,
-      lat: inputs.location.lat
+      lat: inputs.location.lat,
     },
-    
+
     openHours: {
       open: moment(inputs.openHours.open).toISOString(),
-      close: moment(inputs.openHours.close).toISOString()
-    }
-  }
-  
-  console.log("reqBody",reqBody);
-  
+      close: moment(inputs.openHours.close).toISOString(),
+    },
+  };
+
+  console.log("reqBody", reqBody);
+
   // edit hotel
   const handleEdit = () => {
-  setShowUpdatePopup(true);
-};
+    setShowUpdatePopup(true);
+  };
   //delet hotel
-   const handleDelete = (id) => {
+  const handleDelete = (id) => {
     deleteHotelSubmit(id);
   };
 
@@ -154,27 +159,32 @@ const Hotels = () => {
   const deleteHotelSubmit = async (id) => {
     setIsLoading(true);
 
-    popDangerPrompt("DELETE", "Are You sure you want to delete this hotel!" ,"error").then( async (res) =>{
+    popDangerPrompt(
+      "DELETE",
+      "Are You sure you want to delete this hotel!",
+      "error"
+    ).then(async (res) => {
       if (res.isConfirmed) {
-        
-      const response = await deleteHotel(id);
-    
-    if (response.success) {
-      response?.data?.message &&
-        popAlert("Success!", response?.data?.message, "success").then((res) => {
-            setShowPopup(true);
-          
-        });
-      window.location.reload();
-    } else {
-      response?.data?.message &&
-        popAlert("Error!", response?.data?.message, "error");
-      response?.data?.data && setErrors(response.data.data);
-    }
-  }});
-  setIsLoading(false); 
+        const response = await deleteHotel(id);
+
+        if (response.success) {
+          response?.data?.message &&
+            popAlert("Success!", response?.data?.message, "success").then(
+              (res) => {
+                setShowPopup(true);
+              }
+            );
+          window.location.reload();
+        } else {
+          response?.data?.message &&
+            popAlert("Error!", response?.data?.message, "error");
+          response?.data?.data && setErrors(response.data.data);
+        }
+      }
+    });
+    setIsLoading(false);
   };
-  
+
   //get paginated Hotel
   useEffect(() => {
     let unmounted = false;
@@ -186,10 +196,9 @@ const Hotels = () => {
         keyword,
         pagination.page,
         pagination.limit,
-        pagination.orderBy,
-    
+        pagination.orderBy
       );
-        if (response.success) {
+      if (response.success) {
         if (!response.data) return;
 
         let tableDataArr = [];
@@ -200,10 +209,18 @@ const Hotels = () => {
             registrationNumber: hotel.registrationNumber,
             email: hotel.email,
             contactNumber: hotel.contactNumber,
-            hotelFacilities: hotel.hotelFacilities.map(item => item).join(", "),
+            hotelFacilities: hotel.hotelFacilities
+              .map((item) => item)
+              .join(", "),
             openHours: hotel.openHours.open.substring(11, 16),
             closeHours: hotel.openHours.close.substring(11, 16),
-            action: <TableAction id={hotel._id} onEdit={handleEdit}  onDelete={handleDelete}/>,
+            action: (
+              <TableAction
+                id={hotel._id}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+              />
+            ),
           });
         }
         if (!unmounted) {
@@ -219,7 +236,7 @@ const Hotels = () => {
     return () => {
       unmounted = true;
     };
-  }, [pagination, refresh ,keyword]);
+  }, [pagination, refresh, keyword]);
 
   const handleSubmit = async (e) => {
     console.log("Hi");
@@ -242,17 +259,11 @@ const Hotels = () => {
     setLoading(false);
   };
 
-  const handleClear = () => {
-    
-  }
-  
-  const updateSubmit = () => {
+  const handleClear = () => {};
 
-  }
+  const updateSubmit = () => {};
 
-  const handleUpdateClear = () => {
-    
-  }
+  const handleUpdateClear = () => {};
 
   return (
     <React.Fragment>
@@ -296,7 +307,7 @@ const Hotels = () => {
             mt: "3%",
           }}
         >
-            <ReusableTable
+          <ReusableTable
             rows={tableRows}
             columns={tableColumns}
             totalElements={totalElements}
@@ -304,7 +315,7 @@ const Hotels = () => {
             page={pagination.page}
             onPageChange={handlePageChange}
             onLimitChange={handleLimitChange}
-              />                
+          />
         </Box>
       )}
 
@@ -395,167 +406,179 @@ const Hotels = () => {
               )}
             </Box>
 
-            <Box sx={{ mb: 1, }}>
-                <TextField
-                  name="email"
-                  variant="filled"
-                  label="Email"
-                  fullWidth
-                  value={inputs.email}
-                  onChange={(e) =>
-                    setInputs({
-                      ...inputs,
-                      email: e.target.value,
-                    })
-                  }
-                />
-                {errors["email"] && (
-                  <Typography color="error">{errors["email"]}</Typography>
-                )}
+            <Box sx={{ mb: 1 }}>
+              <TextField
+                name="email"
+                variant="filled"
+                label="Email"
+                fullWidth
+                value={inputs.email}
+                onChange={(e) =>
+                  setInputs({
+                    ...inputs,
+                    email: e.target.value,
+                  })
+                }
+              />
+              {errors["email"] && (
+                <Typography color="error">{errors["email"]}</Typography>
+              )}
             </Box>
 
-  <Box sx={{ mb: 1 }}>
-  <LocalizationProvider dateAdapter={AdapterDayjs}>
-    <DesktopTimePicker
-      name="openHours"
-      variant="filled"
-      label="Open Hours"
-      slotProps={{ textField: { fullWidth: true } }}
-      value={inputs.openHours.open ? moment(inputs.openHours.open).tz('UTC') : null}
-      inputFormat="YYYY-MM-DD hh:mm A"
-      onChange={(e) => {
-        const selectedTime = moment(e).tz('UTC').format();
-        setInputs({
-          ...inputs,
-          openHours: { ...inputs.openHours,open: selectedTime }
-        });
-      }}
-      renderInput={(props) => (
-        <>
-          <TextField
-            {...props}
-            InputProps={{ shrink: true }}
-            inputProps={{ min: 0 }}
-          />
-          {errors["openHours"] && (
-            <Typography color="error">{errors["openHours"]}</Typography>
-          )}
-        </>
-      )}
-    />
-  </LocalizationProvider>
-</Box>
+            <Box sx={{ mb: 1 }}>
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <DesktopTimePicker
+                  name="openHours"
+                  variant="filled"
+                  label="Open Hours"
+                  slotProps={{ textField: { fullWidth: true } }}
+                  value={
+                    inputs.openHours.open
+                      ? moment(inputs.openHours.open).tz("UTC")
+                      : null
+                  }
+                  inputFormat="YYYY-MM-DD hh:mm A"
+                  onChange={(e) => {
+                    const selectedTime = moment(e).tz("UTC").format();
+                    setInputs({
+                      ...inputs,
+                      openHours: { ...inputs.openHours, open: selectedTime },
+                    });
+                  }}
+                  renderInput={(props) => (
+                    <>
+                      <TextField
+                        {...props}
+                        InputProps={{ shrink: true }}
+                        inputProps={{ min: 0 }}
+                      />
+                      {errors["openHours"] && (
+                        <Typography color="error">
+                          {errors["openHours"]}
+                        </Typography>
+                      )}
+                    </>
+                  )}
+                />
+              </LocalizationProvider>
+            </Box>
 
-<Box sx={{ mb: 1 }}>
-  <LocalizationProvider dateAdapter={AdapterDayjs}>
-    <DesktopTimePicker
-      name="closeHours"
-      variant="filled"
-      label="Close Hours"
-      slotProps={{ textField: { fullWidth: true } }}
-      value={inputs.openHours.close = moment(inputs.openHours.close).tz('UTC')}
-      inputFormat="YYYY-MM-DD hh:mm A"
-      onChange={(e) => {
-        const selectedTime = moment(e).tz('UTC').format();
-        setInputs({
-          ...inputs,
-          openHours: { ...inputs.openHours, close: selectedTime }
-        });
-      }}
-      renderInput={(props) => (
-        <>
-          <TextField
-            {...props}
-            InputProps={{ shrink: true }}
-            inputProps={{ min: 0 }}
-          />
-          {errors["openHours"] && (
-            <Typography color="error">{errors["openHours"]}</Typography>
-          )}
-        </>
-      )}
-    />
-  </LocalizationProvider>
-</Box>
-    <Box sx={{ mb: 1 }}>
-        <TextField
-          name="hotelFacilities"
-          variant="filled"
-          label="HotelFacilities (Separated by comma)"
-          fullWidth
-          value={inputs.hotelFacilities}
-          onChange={(e) =>
-              setInputs({
-                ...inputs,
-               hotelFacilities: e.target.value.split(",").map((f) => f.trim()),
-              })
-            }
-        />
-      </Box>
-<Box sx={{ mb: 1 }}>
-  <TextField
-    name="location.lng"
-    variant="filled"
-    label="Longitude"
-    fullWidth
-    value={inputs.location.lng}
-    onChange={(e) =>
-      setInputs({
-        ...inputs,
-        location: {
-          ...inputs.location,
-          lng: Number(e.target.value)
-        }
-      })
-    }
-  />
-  {errors["location"] && (
-    <Typography color="error">{errors["location"]}</Typography>
-  )}
-</Box>
+            <Box sx={{ mb: 1 }}>
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <DesktopTimePicker
+                  name="closeHours"
+                  variant="filled"
+                  label="Close Hours"
+                  slotProps={{ textField: { fullWidth: true } }}
+                  value={
+                    (inputs.openHours.close = moment(inputs.openHours.close).tz(
+                      "UTC"
+                    ))
+                  }
+                  inputFormat="YYYY-MM-DD hh:mm A"
+                  onChange={(e) => {
+                    const selectedTime = moment(e).tz("UTC").format();
+                    setInputs({
+                      ...inputs,
+                      openHours: { ...inputs.openHours, close: selectedTime },
+                    });
+                  }}
+                  renderInput={(props) => (
+                    <>
+                      <TextField
+                        {...props}
+                        InputProps={{ shrink: true }}
+                        inputProps={{ min: 0 }}
+                      />
+                      {errors["openHours"] && (
+                        <Typography color="error">
+                          {errors["openHours"]}
+                        </Typography>
+                      )}
+                    </>
+                  )}
+                />
+              </LocalizationProvider>
+            </Box>
+            <Box sx={{ mb: 1 }}>
+              <TextField
+                name="hotelFacilities"
+                variant="filled"
+                label="HotelFacilities (Separated by comma)"
+                fullWidth
+                value={inputs.hotelFacilities}
+                onChange={(e) =>
+                  setInputs({
+                    ...inputs,
+                    hotelFacilities: e.target.value
+                      .split(",")
+                      .map((f) => f.trim()),
+                  })
+                }
+              />
+            </Box>
+            <Box sx={{ mb: 1 }}>
+              <TextField
+                name="location.lng"
+                variant="filled"
+                label="Longitude"
+                fullWidth
+                value={inputs.location.lng}
+                onChange={(e) =>
+                  setInputs({
+                    ...inputs,
+                    location: {
+                      ...inputs.location,
+                      lng: Number(e.target.value),
+                    },
+                  })
+                }
+              />
+              {errors["location"] && (
+                <Typography color="error">{errors["location"]}</Typography>
+              )}
+            </Box>
 
-<Box sx={{ mb: 1 }}>
-  <TextField
-    name="location.lat"
-    variant="filled"
-    label="Latitude"
-    fullWidth
-    value={inputs.location.lat}
-    onChange={(e) =>
-      setInputs({
-        ...inputs,
-        location: {
-          ...inputs.location,
-          lat: Number(e.target.value)
-        }
-      })
-    }
-  />
-  {errors["location"] && (
-    <Typography color="error">{errors["location"]}</Typography>
-  )}
-</Box>
+            <Box sx={{ mb: 1 }}>
+              <TextField
+                name="location.lat"
+                variant="filled"
+                label="Latitude"
+                fullWidth
+                value={inputs.location.lat}
+                onChange={(e) =>
+                  setInputs({
+                    ...inputs,
+                    location: {
+                      ...inputs.location,
+                      lat: Number(e.target.value),
+                    },
+                  })
+                }
+              />
+              {errors["location"] && (
+                <Typography color="error">{errors["location"]}</Typography>
+              )}
+            </Box>
 
-                 
-<Box sx={{ mb: 1 }}>
-  <Typography>File</Typography>
-  <input
-    name="files"
+            <Box sx={{ mb: 1 }}>
+              <Typography>File</Typography>
+              <input
+                name="files"
                 type="file"
                 multiple
-    onChange={(e) => {
-        setInputs({
-        ...inputs,
-        files: Array.from(e.target.files),
-      });
-    }}
-  />
-  {errors["files"] && (
-    <Typography color="error">{errors["files"]}</Typography>
-  )}
-</Box>
+                onChange={(e) => {
+                  setInputs({
+                    ...inputs,
+                    files: Array.from(e.target.files),
+                  });
+                }}
+              />
+              {errors["files"] && (
+                <Typography color="error">{errors["files"]}</Typography>
+              )}
+            </Box>
 
-           
             <Box sx={{ mb: 2, display: "flex", justifyContent: "flex-end" }}>
               <Button
                 type="reset"
@@ -577,10 +600,15 @@ const Hotels = () => {
           </form>
         </Box>
       </Popup>
-  
+
       {/* custom popup */}
-      <Popup title='Update Hotel' width={800} show={showUpdatePopup} onClose={handleUpdatePopupClose}>
-         <Box sx={{ mb: 1 }}>
+      <Popup
+        title="Update Hotel"
+        width={800}
+        show={showUpdatePopup}
+        onClose={handleUpdatePopupClose}
+      >
+        <Box sx={{ mb: 1 }}>
           <form onSubmit={updateSubmit}>
             <Box sx={{ mb: 1 }}>
               <TextField
@@ -660,167 +688,179 @@ const Hotels = () => {
               )}
             </Box>
 
-            <Box sx={{ mb: 1, }}>
-                <TextField
-                  name="email"
-                  variant="filled"
-                  label="Email"
-                  fullWidth
-                  value={inputs.email}
-                  onChange={(e) =>
-                    setInputs({
-                      ...inputs,
-                      email: e.target.value,
-                    })
-                  }
-                />
-                {errors["email"] && (
-                  <Typography color="error">{errors["email"]}</Typography>
-                )}
+            <Box sx={{ mb: 1 }}>
+              <TextField
+                name="email"
+                variant="filled"
+                label="Email"
+                fullWidth
+                value={inputs.email}
+                onChange={(e) =>
+                  setInputs({
+                    ...inputs,
+                    email: e.target.value,
+                  })
+                }
+              />
+              {errors["email"] && (
+                <Typography color="error">{errors["email"]}</Typography>
+              )}
             </Box>
 
-  <Box sx={{ mb: 1 }}>
-  <LocalizationProvider dateAdapter={AdapterDayjs}>
-    <DesktopTimePicker
-      name="openHours"
-      variant="filled"
-      label="Open Hours"
-      slotProps={{ textField: { fullWidth: true } }}
-      value={inputs.openHours.open ? moment(inputs.openHours.open).tz('UTC') : null}
-      inputFormat="YYYY-MM-DD hh:mm A"
-      onChange={(e) => {
-        const selectedTime = moment(e).tz('UTC').format();
-        setInputs({
-          ...inputs,
-          openHours: { ...inputs.openHours,open: selectedTime }
-        });
-      }}
-      renderInput={(props) => (
-        <>
-          <TextField
-            {...props}
-            InputProps={{ shrink: true }}
-            inputProps={{ min: 0 }}
-          />
-          {errors["openHours"] && (
-            <Typography color="error">{errors["openHours"]}</Typography>
-          )}
-        </>
-      )}
-    />
-  </LocalizationProvider>
-</Box>
+            <Box sx={{ mb: 1 }}>
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <DesktopTimePicker
+                  name="openHours"
+                  variant="filled"
+                  label="Open Hours"
+                  slotProps={{ textField: { fullWidth: true } }}
+                  value={
+                    inputs.openHours.open
+                      ? moment(inputs.openHours.open).tz("UTC")
+                      : null
+                  }
+                  inputFormat="YYYY-MM-DD hh:mm A"
+                  onChange={(e) => {
+                    const selectedTime = moment(e).tz("UTC").format();
+                    setInputs({
+                      ...inputs,
+                      openHours: { ...inputs.openHours, open: selectedTime },
+                    });
+                  }}
+                  renderInput={(props) => (
+                    <>
+                      <TextField
+                        {...props}
+                        InputProps={{ shrink: true }}
+                        inputProps={{ min: 0 }}
+                      />
+                      {errors["openHours"] && (
+                        <Typography color="error">
+                          {errors["openHours"]}
+                        </Typography>
+                      )}
+                    </>
+                  )}
+                />
+              </LocalizationProvider>
+            </Box>
 
-<Box sx={{ mb: 1 }}>
-  <LocalizationProvider dateAdapter={AdapterDayjs}>
-    <DesktopTimePicker
-      name="closeHours"
-      variant="filled"
-      label="Close Hours"
-      slotProps={{ textField: { fullWidth: true } }}
-      value={inputs.openHours.close = moment(inputs.openHours.close).tz('UTC')}
-      inputFormat="YYYY-MM-DD hh:mm A"
-      onChange={(e) => {
-        const selectedTime = moment(e).tz('UTC').format();
-        setInputs({
-          ...inputs,
-          openHours: { ...inputs.openHours, close: selectedTime }
-        });
-      }}
-      renderInput={(props) => (
-        <>
-          <TextField
-            {...props}
-            InputProps={{ shrink: true }}
-            inputProps={{ min: 0 }}
-          />
-          {errors["openHours"] && (
-            <Typography color="error">{errors["openHours"]}</Typography>
-          )}
-        </>
-      )}
-    />
-  </LocalizationProvider>
-</Box>
-    <Box sx={{ mb: 1 }}>
-        <TextField
-          name="hotelFacilities"
-          variant="filled"
-          label="HotelFacilities (Separated by comma)"
-          fullWidth
-          value={inputs.hotelFacilities}
-          onChange={(e) =>
-              setInputs({
-                ...inputs,
-               hotelFacilities: e.target.value.split(",").map((f) => f.trim()),
-              })
-            }
-        />
-      </Box>
-<Box sx={{ mb: 1 }}>
-  <TextField
-    name="location.lng"
-    variant="filled"
-    label="Longitude"
-    fullWidth
-    value={inputs.location.lng}
-    onChange={(e) =>
-      setInputs({
-        ...inputs,
-        location: {
-          ...inputs.location,
-          lng: Number(e.target.value)
-        }
-      })
-    }
-  />
-  {errors["location"] && (
-    <Typography color="error">{errors["location"]}</Typography>
-  )}
-</Box>
+            <Box sx={{ mb: 1 }}>
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <DesktopTimePicker
+                  name="closeHours"
+                  variant="filled"
+                  label="Close Hours"
+                  slotProps={{ textField: { fullWidth: true } }}
+                  value={
+                    (inputs.openHours.close = moment(inputs.openHours.close).tz(
+                      "UTC"
+                    ))
+                  }
+                  inputFormat="YYYY-MM-DD hh:mm A"
+                  onChange={(e) => {
+                    const selectedTime = moment(e).tz("UTC").format();
+                    setInputs({
+                      ...inputs,
+                      openHours: { ...inputs.openHours, close: selectedTime },
+                    });
+                  }}
+                  renderInput={(props) => (
+                    <>
+                      <TextField
+                        {...props}
+                        InputProps={{ shrink: true }}
+                        inputProps={{ min: 0 }}
+                      />
+                      {errors["openHours"] && (
+                        <Typography color="error">
+                          {errors["openHours"]}
+                        </Typography>
+                      )}
+                    </>
+                  )}
+                />
+              </LocalizationProvider>
+            </Box>
+            <Box sx={{ mb: 1 }}>
+              <TextField
+                name="hotelFacilities"
+                variant="filled"
+                label="HotelFacilities (Separated by comma)"
+                fullWidth
+                value={inputs.hotelFacilities}
+                onChange={(e) =>
+                  setInputs({
+                    ...inputs,
+                    hotelFacilities: e.target.value
+                      .split(",")
+                      .map((f) => f.trim()),
+                  })
+                }
+              />
+            </Box>
+            <Box sx={{ mb: 1 }}>
+              <TextField
+                name="location.lng"
+                variant="filled"
+                label="Longitude"
+                fullWidth
+                value={inputs.location.lng}
+                onChange={(e) =>
+                  setInputs({
+                    ...inputs,
+                    location: {
+                      ...inputs.location,
+                      lng: Number(e.target.value),
+                    },
+                  })
+                }
+              />
+              {errors["location"] && (
+                <Typography color="error">{errors["location"]}</Typography>
+              )}
+            </Box>
 
-<Box sx={{ mb: 1 }}>
-  <TextField
-    name="location.lat"
-    variant="filled"
-    label="Latitude"
-    fullWidth
-    value={inputs.location.lat}
-    onChange={(e) =>
-      setInputs({
-        ...inputs,
-        location: {
-          ...inputs.location,
-          lat: Number(e.target.value)
-        }
-      })
-    }
-  />
-  {errors["location"] && (
-    <Typography color="error">{errors["location"]}</Typography>
-  )}
-</Box>
+            <Box sx={{ mb: 1 }}>
+              <TextField
+                name="location.lat"
+                variant="filled"
+                label="Latitude"
+                fullWidth
+                value={inputs.location.lat}
+                onChange={(e) =>
+                  setInputs({
+                    ...inputs,
+                    location: {
+                      ...inputs.location,
+                      lat: Number(e.target.value),
+                    },
+                  })
+                }
+              />
+              {errors["location"] && (
+                <Typography color="error">{errors["location"]}</Typography>
+              )}
+            </Box>
 
-                 
-<Box sx={{ mb: 1 }}>
-  <Typography>File</Typography>
-  <input
-    name="files"
+            <Box sx={{ mb: 1 }}>
+              <Typography>File</Typography>
+              <input
+                name="files"
                 type="file"
                 multiple
-    onChange={(e) => {
-        setInputs({
-        ...inputs,
-        files: Array.from(e.target.files),
-      });
-    }}
-  />
-  {errors["files"] && (
-    <Typography color="error">{errors["files"]}</Typography>
-  )}
-</Box>
+                onChange={(e) => {
+                  setInputs({
+                    ...inputs,
+                    files: Array.from(e.target.files),
+                  });
+                }}
+              />
+              {errors["files"] && (
+                <Typography color="error">{errors["files"]}</Typography>
+              )}
+            </Box>
 
-           
             <Box sx={{ mb: 2, display: "flex", justifyContent: "flex-end" }}>
               <Button
                 type="reset"
@@ -841,35 +881,36 @@ const Hotels = () => {
             </Box>
           </form>
         </Box>
-
       </Popup>
       {/* custom popup */}
-      <Popup width={700} show={showDeletePopup} onClose={handleDeletePopupClose}>
-                <Box sx={{ mb: 1 }}>
-                    <Box sx={{ mt: 2 }}>
-                        {loading ? (
-                            <Box
-                                sx={{
-                                    width: '100%',
-                                    mt: '3%',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center'
-                                }}
-                            >
-                                <CircularProgress sx={{ mr: 5 }} />
-                                <Typography sx={{ mb: 2 }} variant="h3">
-                                    LOADING
-                                </Typography>
-                            </Box>
-                        ) : (
-                            <ProductDelete />
-                        )}
-                    </Box>
-                </Box>
-            </Popup>
-
-      
+      <Popup
+        width={700}
+        show={showDeletePopup}
+        onClose={handleDeletePopupClose}
+      >
+        <Box sx={{ mb: 1 }}>
+          <Box sx={{ mt: 2 }}>
+            {loading ? (
+              <Box
+                sx={{
+                  width: "100%",
+                  mt: "3%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <CircularProgress sx={{ mr: 5 }} />
+                <Typography sx={{ mb: 2 }} variant="h3">
+                  LOADING
+                </Typography>
+              </Box>
+            ) : (
+              <ProductDelete />
+            )}
+          </Box>
+        </Box>
+      </Popup>
     </React.Fragment>
   );
 };

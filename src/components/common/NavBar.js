@@ -2,6 +2,9 @@ import { Mail, Notifications } from "@mui/icons-material";
 import { Avatar, Badge, Box, Menu, MenuItem, styled } from "@mui/material";
 import React, { useState } from "react";
 import colors from "../../assets/styles/colors";
+import { useDispatch } from "react-redux";
+import { authActions } from "../../store/authSlice";
+import { useNavigate } from "react-router-dom";
 
 export const IconsWrapper = styled(Box)(({ theme }) => ({
   alignItems: "center",
@@ -11,6 +14,8 @@ export const IconsWrapper = styled(Box)(({ theme }) => ({
 }));
 
 const NavBar = () => {
+  const dispatch = useDispatch();
+
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
   const handleClick = (event) => {
@@ -18,6 +23,11 @@ const NavBar = () => {
   };
   const handleClose = () => {
     setAnchorEl(null);
+  };
+
+  const handleLogout = () => {
+    dispatch(authActions.logout());
+    window.location.replace("/auth/sign-in");
   };
 
   return (
@@ -61,7 +71,7 @@ const NavBar = () => {
         >
           <MenuItem>Profile</MenuItem>
           <MenuItem>My account</MenuItem>
-          <MenuItem>Logout</MenuItem>
+          <MenuItem onClick={handleLogout}>Logout</MenuItem>
         </Menu>
       </Box>
     </React.Fragment>

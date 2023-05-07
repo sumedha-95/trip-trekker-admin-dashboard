@@ -7,33 +7,37 @@ import {
   CircularProgress,
 } from "@mui/material";
 import colors from "../assets/styles/colors";
-import { createUser } from "../service/auth.service";
+import { signIn } from "../service/auth.service";
 import { popAlert } from "../utils/alerts";
 import { useDispatch } from "react-redux";
 import { authActions } from "../store/authSlice";
+import AuthModel from "../models/auth";
 
 const SignIn = () => {
   const dispatch = useDispatch();
 
-  const [inputs, setInputs] = useState();
+  const [inputs, setInputs] = useState(AuthModel);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    const response = await createUser(inputs);
+    const response = await signIn(inputs);
     if (response.success) {
       setLoading(false);
       dispatch(authActions.login(response.data));
       response?.data &&
-        popAlert("Success!", response?.data.message, "Succes").then((res) => {
+        popAlert(
+          "Success!",
+          `Hi, Welcome ${response.data.user?.name}!`,
+          "Succes"
+        ).then((res) => {
           window.location.replace("/");
         });
     } else {
-      response?.data &&
-        popAlert("Error!", response?.data, "error");
-      response?.data && setErrors(response.data);
+      response?.data && popAlert("Error!", response?.data?.message, "error");
+      response?.data && setErrors(response.data?.data);
     }
     setLoading(false);
   };

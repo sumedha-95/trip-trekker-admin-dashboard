@@ -34,7 +34,7 @@ import DeleteButton from "../components/common/DeleteButton";
 import { useSelector } from "react-redux";
 
 //table columns
-const tableColumns = [ 
+const tableColumns = [
   {
     id: "name",
     label: "Name",
@@ -50,7 +50,7 @@ const tableColumns = [
     label: "Units",
     align: "left",
   },
-    {
+  {
     id: "price",
     label: "Price",
     align: "left",
@@ -79,9 +79,9 @@ const tableColumns = [
 
 const TourGuides = () => {
   const { id } = useParams();
-  console.log("ado weda karapan",id);
+  console.log("ado weda karapan", id);
   const navigate = useNavigate();
-  const [inputs, setInputs] = useState('');
+  const [inputs, setInputs] = useState("");
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
@@ -98,7 +98,7 @@ const TourGuides = () => {
   const [refresh, setRefresh] = useState(false);
   const [keyword, setKeyword] = useState("");
   const [selectedOrderId, setSelectedOrderId] = useState(false);
-  const [isSeller,setisSeller] = useState(false)
+  const [isSeller, setisSeller] = useState(false);
 
   const handlePageChange = (page) => {
     setPagination({ ...pagination, page: page });
@@ -118,34 +118,24 @@ const TourGuides = () => {
 
   const authState = useSelector((state) => state.auth);
 
-    useEffect(() => {
-
-    if (authState.user.role == 'seller') {
-      setisSeller(true)
+  useEffect(() => {
+    if (authState.user.role == "seller") {
+      setisSeller(true);
     }
-    
+
     if (!window.location.href.includes("auth") && !authState?.isLoggedIn)
       window.location.replace("/auth/sign-in");
   }, [authState.isLoggedIn]);
 
-   
-  const handleSubmit = () => {
-    
-  }
+  const handleSubmit = () => {};
 
-  const handleClear = () => {
-    
-  }
-  
-  const updateSubmit = () => {
+  const handleClear = () => {};
 
-  }
+  const updateSubmit = () => {};
 
-  const handleUpdateClear = () => {
-    
-  }
+  const handleUpdateClear = () => {};
 
-    return (
+  return (
     <React.Fragment>
       <Typography variant="h4" fontWeight="bold" sx={{ mb: 2 }}>
         Tour Guides
@@ -187,7 +177,7 @@ const TourGuides = () => {
             mt: "3%",
           }}
         >
-           <ReusableTable
+          <ReusableTable
             rows={tableRows}
             columns={tableColumns}
             totalElements={totalElements}
@@ -195,7 +185,7 @@ const TourGuides = () => {
             page={pagination.page}
             onPageChange={handlePageChange}
             onLimitChange={handleLimitChange}
-          /> 
+          />
         </Box>
       )}
 
@@ -241,9 +231,7 @@ const TourGuides = () => {
                 }
               />
               {errors["description"] && (
-                <Typography color="error">
-                  {errors["description"]}
-                </Typography>
+                <Typography color="error">{errors["description"]}</Typography>
               )}
             </Box>
             <Box sx={{ mb: 1 }}>
@@ -308,25 +296,24 @@ const TourGuides = () => {
                 <Typography color="error">{errors["unitAmount"]}</Typography>
               )}
             </Box>
-           <Box sx={{ mb: 1 }}>
-  <Typography>File</Typography>
-  <input
-    name="file"
-    type="file"
-    onChange={(e) => {
-      const file = e.target.files[0];
-      setInputs({
-        ...inputs,
-        file: file,
-      });
-    }}
-  />
-  {errors["file"] && (
-    <Typography color="error">{errors["file"]}</Typography>
-  )}
-</Box>
+            <Box sx={{ mb: 1 }}>
+              <Typography>File</Typography>
+              <input
+                name="file"
+                type="file"
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  setInputs({
+                    ...inputs,
+                    file: file,
+                  });
+                }}
+              />
+              {errors["file"] && (
+                <Typography color="error">{errors["file"]}</Typography>
+              )}
+            </Box>
 
-           
             <Box sx={{ mb: 2, display: "flex", justifyContent: "flex-end" }}>
               <Button
                 type="reset"
@@ -348,12 +335,16 @@ const TourGuides = () => {
           </form>
         </Box>
       </Popup>
-  
+
       {/* custom popup */}
-            <Popup title='Update TourGuides' width={800} show={showUpdatePopup} onClose={handleUpdatePopupClose}>
+      <Popup
+        title="Update TourGuides"
+        width={800}
+        show={showUpdatePopup}
+        onClose={handleUpdatePopupClose}
+      >
         <Box sx={{ mb: 1 }}>
-        
-          <form onSubmit={updateSubmit} >
+          <form onSubmit={updateSubmit}>
             <Box sx={{ mb: 1 }}>
               <TextField
                 name="name"
@@ -387,9 +378,7 @@ const TourGuides = () => {
                 }
               />
               {errors["description"] && (
-                <Typography color="error">
-                  {errors["description"]}
-                </Typography>
+                <Typography color="error">{errors["description"]}</Typography>
               )}
             </Box>
             <Box sx={{ mb: 1 }}>
@@ -473,34 +462,36 @@ const TourGuides = () => {
             </Box>
           </form>
         </Box>
-      </Popup>      
+      </Popup>
       {/* custom popup */}
-      <Popup width={700} show={showDeletePopup} onClose={handleDeletePopupClose}>
-                <Box sx={{ mb: 1 }}>
-                    <Box sx={{ mt: 2 }}>
-                        {loading ? (
-                            <Box
-                                sx={{
-                                    width: '100%',
-                                    mt: '3%',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center'
-                                }}
-                            >
-                                <CircularProgress sx={{ mr: 5 }} />
-                                <Typography sx={{ mb: 2 }} variant="h3">
-                                    LOADING
-                                </Typography>
-                            </Box>
-                        ) : (
-                            <ProductDelete />
-                        )}
-                    </Box>
-                </Box>
-            </Popup>
-
-      
+      <Popup
+        width={700}
+        show={showDeletePopup}
+        onClose={handleDeletePopupClose}
+      >
+        <Box sx={{ mb: 1 }}>
+          <Box sx={{ mt: 2 }}>
+            {loading ? (
+              <Box
+                sx={{
+                  width: "100%",
+                  mt: "3%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <CircularProgress sx={{ mr: 5 }} />
+                <Typography sx={{ mb: 2 }} variant="h3">
+                  LOADING
+                </Typography>
+              </Box>
+            ) : (
+              <ProductDelete />
+            )}
+          </Box>
+        </Box>
+      </Popup>
     </React.Fragment>
   );
 };

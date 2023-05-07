@@ -1,14 +1,13 @@
 import React, { useState, useEffect, useMemo } from "react";
 import SearchBar from "../components/common/SearchBar";
 import AddButton from "../components/common/AddButton";
-// import ReportButton from "../components/common/ReportButton";
 import { Grid, Box, Typography, CircularProgress } from "@mui/material";
 import Popup from "../components/common/Popup";
 import ReusableTable from "../components/common/ReusableTable";
 import TableAction from "../components/common/TableActions";
 import ReportButton from "../components/common/ReportButton";
 import { useSelector } from "react-redux";
-import AttractionForm from "../components/Attraction/AttractionForm";
+import AttractionForm from "../components/attraction/AttractionForm";
 import constants from "../constants";
 import { getPaginatedAttractions } from "../service/attraction.service";
 
@@ -54,6 +53,7 @@ const Attractions = () => {
   const [totalElements, setTotalElements] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [keyword, setKeyword] = useState("");
+  const [refresh, setRefresh] = useState(false);
 
   const handlePageChange = (page) => {
     setPagination({ ...pagination, page: page });
@@ -65,6 +65,11 @@ const Attractions = () => {
 
   const handlePopupClose = () => setShowPopup(false);
   const handleUpdatePopupClose = () => setShowUpdatePopup(false);
+
+  const handleOnCreationSuccess = (data) => {
+    handlePopupClose();
+    setRefresh(!refresh);
+  };
 
   const handleEdit = () => {
     setShowUpdatePopup(true);
@@ -125,7 +130,7 @@ const Attractions = () => {
     return () => {
       unmounted = true;
     };
-  }, [pagination, keyword]);
+  }, [pagination, keyword, refresh]);
 
   useEffect(() => {
     if (!window.location.href.includes("auth") && !authState?.isLoggedIn)
@@ -193,7 +198,10 @@ const Attractions = () => {
         show={showPopup}
         onClose={handlePopupClose}
       >
-        <AttractionForm type={constants.FORM_TYPE.CREATE} />
+        <AttractionForm
+          type={constants.FORM_TYPE.CREATE}
+          onSuccess={handleOnCreationSuccess}
+        />
       </Popup>
 
       {/* update popup */}

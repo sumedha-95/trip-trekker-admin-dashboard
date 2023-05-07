@@ -7,7 +7,7 @@ const Attraction = {
     close: "",
   },
   accessibilityOptions: [],
-  files: undefined,
+  files: [],
 };
 
 export default Attraction;

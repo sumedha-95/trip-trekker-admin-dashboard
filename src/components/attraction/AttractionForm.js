@@ -11,14 +11,42 @@ import AttractionModel from "../../models/attraction";
 import moment from "moment-timezone";
 import { DesktopTimePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { createAttraction } from "../../service/attraction.service";
+import { popAlert } from "../../utils/alerts";
+import dayjs from "dayjs";
 
-const AttractionForm = ({ type, data }) => {
+const AttractionForm = ({ type, data, onSuccess }) => {
   const [inputs, setInputs] = useState(AttractionModel);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
+    e.preventDefault();
+    setLoading(true);
+
+    // process inputs
+    inputs.location = {
+      coordinates: [inputs.location.lng, inputs.location.lat],
+    };
+
+    const response = await createAttraction(inputs);
+
+    if (response.success) {
+      popAlert(
+        "Success!",
+        "Successfully created the attraction!",
+        "success"
+      ).then((res) => {
+        onSuccess(response.data);
+      });
+    } else {
+      response?.data?.message &&
+        popAlert("Error!", response?.data?.message, "error");
+      response?.data?.data && setErrors(response.data.data);
+    }
+    setLoading(false);
   };
 
   const handleClear = () => {
@@ -73,28 +101,15 @@ const AttractionForm = ({ type, data }) => {
               variant="filled"
               label="Open Hour"
               slotProps={{ textField: { fullWidth: true } }}
-              value={
-                inputs.openHours.open
-                  ? moment(inputs.openHours.open).tz("UTC")
-                  : null
-              }
+              value={inputs.openHours.open ? dayjs(inputs.openHours.open) : ""}
               inputFormat="YYYY-MM-DD hh:mm A"
-              onChange={(e) => {
-                const selectedTime = moment(e).tz("UTC").format();
+              onChange={(val) => {
+                const selectedTime = moment(val).tz("UTC").format();
                 setInputs({
                   ...inputs,
                   openHours: { ...inputs.openHours, open: selectedTime },
                 });
               }}
-              renderInput={(props) => (
-                <>
-                  <TextField
-                    {...props}
-                    InputProps={{ shrink: true }}
-                    inputProps={{ min: 0 }}
-                  />
-                </>
-              )}
             />
           </LocalizationProvider>
           {errors["openHours.open"] && (
@@ -110,9 +125,7 @@ const AttractionForm = ({ type, data }) => {
               label="Close Hour"
               slotProps={{ textField: { fullWidth: true } }}
               value={
-                inputs.openHours.open
-                  ? moment(inputs.openHours.open).tz("UTC")
-                  : null
+                inputs.openHours.close ? dayjs(inputs.openHours.close) : ""
               }
               inputFormat="YYYY-MM-DD hh:mm A"
               onChange={(e) => {
@@ -122,15 +135,6 @@ const AttractionForm = ({ type, data }) => {
                   openHours: { ...inputs.openHours, close: selectedTime },
                 });
               }}
-              renderInput={(props) => (
-                <>
-                  <TextField
-                    {...props}
-                    InputProps={{ shrink: true }}
-                    inputProps={{ min: 0 }}
-                  />
-                </>
-              )}
             />
           </LocalizationProvider>
           {errors["openHours.close"] && (
@@ -162,10 +166,59 @@ const AttractionForm = ({ type, data }) => {
         </Box>
 
         <Box sx={{ mb: 1 }}>
+          <TextField
+            name="location.lng"
+            variant="filled"
+            label="Longitude"
+            fullWidth
+            value={inputs.location.lng}
+            onChange={(e) =>
+              setInputs({
+                ...inputs,
+                location: {
+                  ...inputs.location,
+                  lng: Number(e.target.value),
+                },
+              })
+            }
+          />
+          {errors["location.coordinates.0"] && (
+            <Typography color="error">
+              {errors["location.coordinates.0"]}
+            </Typography>
+          )}
+        </Box>
+
+        <Box sx={{ mb: 1 }}>
+          <TextField
+            name="location.lat"
+            variant="filled"
+            label="Latitudes"
+            fullWidth
+            value={inputs.location.lat}
+            onChange={(e) =>
+              setInputs({
+                ...inputs,
+                location: {
+                  ...inputs.location,
+                  lat: Number(e.target.value),
+                },
+              })
+            }
+          />
+          {errors["location.coordinates.1"] && (
+            <Typography color="error">
+              {errors["location.coordinates.1"]}
+            </Typography>
+          )}
+        </Box>
+
+        <Box sx={{ mb: 1 }}>
           <Typography>Images</Typography>
           <input
             name="images"
             type="file"
+            multiple
             onChange={(e) => {
               setInputs({
                 ...inputs,

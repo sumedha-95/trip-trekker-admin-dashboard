@@ -3,13 +3,15 @@ import { buildResponse } from "../utils/responseBuilder";
 
 export const createHotel = async (data) => {
   const { files } = data;
-
+console.log(files);
   const formData = new FormData();
   formData.append("strigifiedBody", JSON.stringify(data));
-  formData.append("files", files);
+  files.forEach((file) => {
+    formData.append("files",file)
+  });
 
   const response = await getApi()
-    .post("/hotels/", formData)
+    .post("/hotels", formData)
     .then((res) => {
       return buildResponse(true, res.data);
     })

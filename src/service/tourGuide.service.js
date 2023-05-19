@@ -3,7 +3,7 @@ import { buildResponse } from "../utils/responseBuilder";
 
 export const getAllTourGuides = async (page, limit, orderBy, keyword) => {
   const response = await getApiForFormData()
-    .get("/users", {
+    .get("/users/admin", {
       params: {
         page,
         limit,

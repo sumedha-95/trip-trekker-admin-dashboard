@@ -34,12 +34,14 @@ import {
   createHotel,
   deleteHotel,
   getPaginatedHotels,
+  updateHotel,
 } from "../service/hotel.service";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DesktopTimePicker } from "@mui/x-date-pickers";
 import Hotel from "../models/hotel";
 import moment from "moment-timezone";
+import dayjs from "dayjs";
 
 //table columns
 const tableColumns = [
@@ -91,7 +93,7 @@ const tableColumns = [
 ];
 
 const Hotels = () => {
-  const { id } = useParams();
+  const { hotelId } = useParams();
   const navigate = useNavigate();
   const [inputs, setInputs] = useState(Hotel);
   const [errors, setErrors] = useState({});
@@ -111,6 +113,7 @@ const Hotels = () => {
   const [keyword, setKeyword] = useState("");
   const [selectedOrderId, setSelectedOrderId] = useState(false);
   const [isSeller, setisSeller] = useState(false);
+  const [data, setData] = useState("");
 
   const handlePageChange = (page) => {
     setPagination({ ...pagination, page: page });
@@ -147,9 +150,11 @@ const Hotels = () => {
   console.log("reqBody", reqBody);
 
   // edit hotel
-  const handleEdit = () => {
+  const handleEdit = (hotel) => {
+    setInputs(hotel);
     setShowUpdatePopup(true);
   };
+
   //delet hotel
   const handleDelete = (id) => {
     deleteHotelSubmit(id);
@@ -217,7 +222,7 @@ const Hotels = () => {
             action: (
               <TableAction
                 id={hotel._id}
-                onEdit={handleEdit}
+                onEdit={() => handleEdit(hotel)}
                 onDelete={handleDelete}
               />
             ),
@@ -236,32 +241,58 @@ const Hotels = () => {
     return () => {
       unmounted = true;
     };
-  }, [pagination, refresh, keyword]);
+  }, [pagination, refresh, keyword,setData]);
 
+   
   const handleSubmit = async (e) => {
-    console.log("Hi");
     e.preventDefault();
     setLoading(true);
+
+    // process inputs
+    inputs.location = {
+      coordinates: [inputs.location.lng, inputs.location.lat],
+    };
 
     const response = await createHotel(inputs);
 
     if (response.success) {
       setRefresh(!refresh);
-      response?.data?.message &&
-        popAlert("Success!", response?.data?.message, "success").then((res) => {
+      popAlert('Success!', 'Successfully created the Hotels!', 'success').then(
+        (res) => {
           setShowPopup(false);
-        });
+        }
+      );
     } else {
       response?.data?.message &&
-        popAlert("Error!", response?.data?.message, "error");
+        popAlert('Error!', response?.data?.message, 'error');
       response?.data?.data && setErrors(response.data.data);
     }
     setLoading(false);
   };
 
+
   const handleClear = () => {};
 
-  const updateSubmit = () => {};
+  // update hotel
+  const updateSubmit = async () => {
+  setLoading(true);
+
+  const response = await updateHotel(hotelId, inputs);
+
+  if (response.success) {
+    setRefresh(!refresh);
+    popAlert('Success!', 'Successfully updated the hotel!', 'success').then(
+      (res) => {
+        setShowUpdatePopup(false);
+      }
+    );
+  } else {
+    response?.data?.message &&
+      popAlert('Error!', response?.data?.message, 'error');
+    response?.data?.data && setErrors(response.data.data);
+  }
+  setLoading(false);
+};
 
   const handleUpdateClear = () => {};
 
@@ -432,35 +463,20 @@ const Hotels = () => {
                   variant="filled"
                   label="Open Hours"
                   slotProps={{ textField: { fullWidth: true } }}
-                  value={
-                    inputs.openHours.open
-                      ? moment(inputs.openHours.open).tz("UTC")
-                      : null
-                  }
+                  value={inputs.openHours.open ? dayjs(inputs.openHours.open) : ""}
                   inputFormat="YYYY-MM-DD hh:mm A"
-                  onChange={(e) => {
-                    const selectedTime = moment(e).tz("UTC").format();
-                    setInputs({
-                      ...inputs,
-                      openHours: { ...inputs.openHours, open: selectedTime },
+                  onChange={(val) => {
+                    const selectedTime = moment(val).tz("UTC").format();
+                      setInputs({
+                        ...inputs,
+                         openHours: { ...inputs.openHours, open: selectedTime },
                     });
                   }}
-                  renderInput={(props) => (
-                    <>
-                      <TextField
-                        {...props}
-                        InputProps={{ shrink: true }}
-                        inputProps={{ min: 0 }}
-                      />
-                      {errors["openHours"] && (
-                        <Typography color="error">
-                          {errors["openHours"]}
-                        </Typography>
-                      )}
-                    </>
-                  )}
                 />
               </LocalizationProvider>
+              {errors["openHours.open"] && (
+                <Typography color="error">{errors["openHours.open"]}</Typography>
+              )}
             </Box>
 
             <Box sx={{ mb: 1 }}>
@@ -470,35 +486,22 @@ const Hotels = () => {
                   variant="filled"
                   label="Close Hours"
                   slotProps={{ textField: { fullWidth: true } }}
-                  value={
-                    (inputs.openHours.close = moment(inputs.openHours.close).tz(
-                      "UTC"
-                    ))
+                   value={
+                    inputs.openHours.close ? dayjs(inputs.openHours.close) : ""
                   }
                   inputFormat="YYYY-MM-DD hh:mm A"
                   onChange={(e) => {
                     const selectedTime = moment(e).tz("UTC").format();
-                    setInputs({
-                      ...inputs,
-                      openHours: { ...inputs.openHours, close: selectedTime },
-                    });
+                      setInputs({
+                        ...inputs,
+                        openHours: { ...inputs.openHours, close: selectedTime },
+                      });
                   }}
-                  renderInput={(props) => (
-                    <>
-                      <TextField
-                        {...props}
-                        InputProps={{ shrink: true }}
-                        inputProps={{ min: 0 }}
-                      />
-                      {errors["openHours"] && (
-                        <Typography color="error">
-                          {errors["openHours"]}
-                        </Typography>
-                      )}
-                    </>
-                  )}
                 />
               </LocalizationProvider>
+              {errors["openHours.close"] && (
+            <Typography color="error">{errors["openHours.close"]}</Typography>
+          )}
             </Box>
             <Box sx={{ mb: 1 }}>
               <TextField
@@ -507,6 +510,8 @@ const Hotels = () => {
                 label="HotelFacilities (Separated by comma)"
                 fullWidth
                 value={inputs.hotelFacilities}
+                type="text"
+                 InputProps={{ inputProps: { min: 0 }, shrink: "true" }}
                 onChange={(e) =>
                   setInputs({
                     ...inputs,
@@ -516,6 +521,9 @@ const Hotels = () => {
                   })
                 }
               />
+              {errors["hotelFacilities"] && (
+                <Typography color="error">{errors["hotelFacilities"]}</Typography>
+              )}
             </Box>
             <Box sx={{ mb: 1 }}>
               <TextField
@@ -534,8 +542,8 @@ const Hotels = () => {
                   })
                 }
               />
-              {errors["location"] && (
-                <Typography color="error">{errors["location"]}</Typography>
+              {errors["location.coordinates.0"] && (
+                <Typography color="error">{errors["location.coordinates.0"]}</Typography>
               )}
             </Box>
 
@@ -556,15 +564,15 @@ const Hotels = () => {
                   })
                 }
               />
-              {errors["location"] && (
-                <Typography color="error">{errors["location"]}</Typography>
+              {errors["location.coordinates.1"] && (
+                <Typography color="error">{errors["location.coordinates.1"]}</Typography>
               )}
             </Box>
 
             <Box sx={{ mb: 1 }}>
               <Typography>File</Typography>
               <input
-                name="files"
+                name="images"
                 type="file"
                 multiple
                 onChange={(e) => {
@@ -574,8 +582,8 @@ const Hotels = () => {
                   });
                 }}
               />
-              {errors["files"] && (
-                <Typography color="error">{errors["files"]}</Typography>
+              {errors["file"] && (
+                <Typography color="error">{errors["file"]}</Typography>
               )}
             </Box>
 
@@ -714,35 +722,20 @@ const Hotels = () => {
                   variant="filled"
                   label="Open Hours"
                   slotProps={{ textField: { fullWidth: true } }}
-                  value={
-                    inputs.openHours.open
-                      ? moment(inputs.openHours.open).tz("UTC")
-                      : null
-                  }
+                  value={inputs.openHours.open ? dayjs(inputs.openHours.open) : ""}
                   inputFormat="YYYY-MM-DD hh:mm A"
-                  onChange={(e) => {
-                    const selectedTime = moment(e).tz("UTC").format();
-                    setInputs({
-                      ...inputs,
-                      openHours: { ...inputs.openHours, open: selectedTime },
+                  onChange={(val) => {
+                    const selectedTime = moment(val).tz("UTC").format();
+                      setInputs({
+                        ...inputs,
+                         openHours: { ...inputs.openHours, open: selectedTime },
                     });
                   }}
-                  renderInput={(props) => (
-                    <>
-                      <TextField
-                        {...props}
-                        InputProps={{ shrink: true }}
-                        inputProps={{ min: 0 }}
-                      />
-                      {errors["openHours"] && (
-                        <Typography color="error">
-                          {errors["openHours"]}
-                        </Typography>
-                      )}
-                    </>
-                  )}
                 />
               </LocalizationProvider>
+               {errors["openHours.open"] && (
+                <Typography color="error">{errors["openHours.open"]}</Typography>
+              )}
             </Box>
 
             <Box sx={{ mb: 1 }}>
@@ -752,35 +745,22 @@ const Hotels = () => {
                   variant="filled"
                   label="Close Hours"
                   slotProps={{ textField: { fullWidth: true } }}
-                  value={
-                    (inputs.openHours.close = moment(inputs.openHours.close).tz(
-                      "UTC"
-                    ))
+                   value={
+                    inputs.openHours.close ? dayjs(inputs.openHours.close) : ""
                   }
                   inputFormat="YYYY-MM-DD hh:mm A"
                   onChange={(e) => {
                     const selectedTime = moment(e).tz("UTC").format();
-                    setInputs({
-                      ...inputs,
-                      openHours: { ...inputs.openHours, close: selectedTime },
-                    });
+                      setInputs({
+                        ...inputs,
+                        openHours: { ...inputs.openHours, close: selectedTime },
+                      });
                   }}
-                  renderInput={(props) => (
-                    <>
-                      <TextField
-                        {...props}
-                        InputProps={{ shrink: true }}
-                        inputProps={{ min: 0 }}
-                      />
-                      {errors["openHours"] && (
-                        <Typography color="error">
-                          {errors["openHours"]}
-                        </Typography>
-                      )}
-                    </>
-                  )}
                 />
               </LocalizationProvider>
+              {errors["openHours.close"] && (
+            <Typography color="error">{errors["openHours.close"]}</Typography>
+          )}
             </Box>
             <Box sx={{ mb: 1 }}>
               <TextField
@@ -789,6 +769,8 @@ const Hotels = () => {
                 label="HotelFacilities (Separated by comma)"
                 fullWidth
                 value={inputs.hotelFacilities}
+                type="text"
+                InputProps={{ inputProps: { min: 0 }, shrink: "true" }}
                 onChange={(e) =>
                   setInputs({
                     ...inputs,
@@ -798,6 +780,9 @@ const Hotels = () => {
                   })
                 }
               />
+              {errors["hotelFacilities"] && (
+                <Typography color="error">{errors["hotelFacilities"]}</Typography>
+              )}
             </Box>
             <Box sx={{ mb: 1 }}>
               <TextField
@@ -816,8 +801,8 @@ const Hotels = () => {
                   })
                 }
               />
-              {errors["location"] && (
-                <Typography color="error">{errors["location"]}</Typography>
+              {errors["location.coordinates.0"] && (
+                <Typography color="error">{errors["location.coordinates.0"]}</Typography>
               )}
             </Box>
 
@@ -838,15 +823,15 @@ const Hotels = () => {
                   })
                 }
               />
-              {errors["location"] && (
-                <Typography color="error">{errors["location"]}</Typography>
+              {errors["location.coordinates.1"] && (
+                <Typography color="error">{errors["location.coordinates.1"]}</Typography>
               )}
             </Box>
 
             <Box sx={{ mb: 1 }}>
               <Typography>File</Typography>
               <input
-                name="files"
+                name="images"
                 type="file"
                 multiple
                 onChange={(e) => {
@@ -856,8 +841,8 @@ const Hotels = () => {
                   });
                 }}
               />
-              {errors["files"] && (
-                <Typography color="error">{errors["files"]}</Typography>
+              {errors["file"] && (
+                <Typography color="error">{errors["file"]}</Typography>
               )}
             </Box>
 

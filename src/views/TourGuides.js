@@ -23,12 +23,13 @@ import {
   TablePagination,
 } from "@mui/material";
 import Popup from "../components/common/Popup";
+import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import HowToRegIcon from "@mui/icons-material/HowToReg";
 import ReusableTable from "../components/common/ReusableTable";
 import { popAlert, popDangerPrompt } from "../utils/alerts";
 import colors from "../assets/styles/colors";
 import TableAction from "../components/common/TableActions";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Paper from "@mui/material/Paper";
 import ReportButton from "../components/common/ReportButton";
 import ProductCard from "../components/common/ProductCard";
@@ -40,6 +41,7 @@ import { useSelector } from "react-redux";
 import { getAllTourGuides } from "../service/tourGuide.service";
 import { verifyTourGuide } from "../service/tourGuide.service";
 import tourGuide from "../models/tourGuide";
+import { getDownloadURLFromFirebaseRef } from "../utils/firebase";
 
 //table columns
 const tableColumns = [
@@ -156,13 +158,24 @@ const TourGuides = () => {
         let tableDataArr = [];
         for (const tourGuide of response.data.content) {
           const isVerified = tourGuide.tourGuide.isVerified ? "Yes" : "No";
-          
+          const pdfRef = tourGuide?.tourGuide.certificate?.firebaseStorageRef;
+          if (pdfRef)
+            tourGuide.certificate = await getDownloadURLFromFirebaseRef(pdfRef);
+
           tableDataArr.push({
             name: tourGuide.name,
             address: tourGuide.address,
             phone: tourGuide.mobileNumber,
             verify: isVerified,
-            // certificate: tourGuide.tourGuide.certificate,
+            certificate: (
+              <Link
+                to={tourGuide.certificate}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <PictureAsPdfIcon />
+              </Link>
+            ),
             action: (
               <TableAction
                 id={tourGuide._id}

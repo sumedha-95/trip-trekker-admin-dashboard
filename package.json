@@ -18,7 +18,8 @@
     "react-to-print": "^2.14.12",
     "redux-persist": "^6.0.0",
     "styled-components": "^5.3.10",
-    "sweetalert2": "^11.7.5"
+    "sweetalert2": "^11.7.5",
+    "firebase": "^9.21.0"
   },
   "scripts": {
     "start": "react-scripts start",

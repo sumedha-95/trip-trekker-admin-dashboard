@@ -60,7 +60,7 @@ const AttractionForm = ({ type, data, onSuccess }) => {
           <TextField
             name="name"
             variant="filled"
-            label="Product Name"
+            label="Name"
             fullWidth
             value={inputs.name}
             onChange={(e) =>
@@ -78,7 +78,7 @@ const AttractionForm = ({ type, data, onSuccess }) => {
           <TextField
             name="description"
             variant="filled"
-            label="Product Description"
+            label="Description"
             fullWidth
             value={inputs.description}
             multiline

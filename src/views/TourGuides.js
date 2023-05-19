@@ -9,6 +9,10 @@ import {
   CircularProgress,
   TextField,
   Button,
+  InputLabel,
+  MenuItem,
+  FormControl,
+  Select,
   Card,
   TableContainer,
   TableHead,
@@ -19,6 +23,7 @@ import {
   TablePagination,
 } from "@mui/material";
 import Popup from "../components/common/Popup";
+import HowToRegIcon from "@mui/icons-material/HowToReg";
 import ReusableTable from "../components/common/ReusableTable";
 import { popAlert, popDangerPrompt } from "../utils/alerts";
 import colors from "../assets/styles/colors";
@@ -32,6 +37,9 @@ import { useParams } from "react-router-dom";
 import EditButton from "../components/common/EditButton";
 import DeleteButton from "../components/common/DeleteButton";
 import { useSelector } from "react-redux";
+import { getAllTourGuides } from "../service/tourGuide.service";
+import { verifyTourGuide } from "../service/tourGuide.service";
+import tourGuide from "../models/tourGuide";
 
 //table columns
 const tableColumns = [
@@ -41,33 +49,23 @@ const tableColumns = [
     align: "center",
   },
   {
-    id: "unit",
-    label: "UoM",
+    id: "address",
+    label: "Address",
     align: "left",
   },
   {
-    id: "unitAmount",
-    label: "Units",
+    id: "phone",
+    label: "Mobile Number",
     align: "left",
   },
   {
-    id: "price",
-    label: "Price",
+    id: "verify",
+    label: "Verification",
     align: "left",
   },
   {
-    id: "seller",
-    label: "Seller",
-    align: "left",
-  },
-  {
-    id: "description",
-    label: "Description",
-    align: "left",
-  },
-  {
-    id: "updatedAt",
-    label: "Date",
+    id: "certificate",
+    label: "Certificate",
     align: "left",
   },
   {
@@ -78,10 +76,8 @@ const tableColumns = [
 ];
 
 const TourGuides = () => {
-  const { id } = useParams();
-  console.log("ado weda karapan", id);
   const navigate = useNavigate();
-  const [inputs, setInputs] = useState("");
+  const [inputs, setInputs] = useState(tourGuide);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
@@ -109,31 +105,89 @@ const TourGuides = () => {
   };
 
   const handlePopupClose = () => setShowPopup(false);
-  const handleUpdatePopupClose = () => setShowUpdatePopup(false);
-  const handleDeletePopupClose = () => setShowDeletePopup(false);
 
   const handleSearch = (input) => {
     setKeyword(input);
   };
 
-  const authState = useSelector((state) => state.auth);
+  const handleVerify = (tourGuide) => {
+    setShowPopup(true);
+    setInputs(tourGuide);
+  };
+
+  const handleDelete = () => {};
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    const response = await verifyTourGuide(inputs._id, inputs);
+
+    if (response.success) {
+      setRefresh(!refresh);
+      response?.data &&
+        popAlert("Success!", "Tour Guide Verification done", "success").then(
+          (res) => {
+            setShowPopup(false);
+          }
+        );
+    } else {
+      response?.data?.message &&
+        popAlert("Error!", response?.data?.message, "error");
+      response?.data?.data && setErrors(response.data.data);
+    }
+    setLoading(false);
+  };
 
   useEffect(() => {
-    if (authState.user.role == "seller") {
-      setisSeller(true);
-    }
+    let unmounted = false;
 
-    if (!window.location.href.includes("auth") && !authState?.isLoggedIn)
-      window.location.replace("/auth/sign-in");
-  }, [authState.isLoggedIn]);
+    if (!unmounted) setIsLoading(true);
 
-  const handleSubmit = () => {};
+    const fetchAndSet = async () => {
+      const response = await getAllTourGuides(
+        pagination.page,
+        pagination.limit,
+        pagination.orderBy
+      );
+      if (response.success) {
+        if (!response.data) return;
 
-  const handleClear = () => {};
+        let tableDataArr = [];
+        for (const tourGuide of response.data.content) {
+          const isVerified = tourGuide.tourGuide.isVerified ? "Yes" : "No";
+          
+          tableDataArr.push({
+            name: tourGuide.name,
+            address: tourGuide.address,
+            phone: tourGuide.mobileNumber,
+            verify: isVerified,
+            // certificate: tourGuide.tourGuide.certificate,
+            action: (
+              <TableAction
+                id={tourGuide._id}
+                onVerify={() => handleVerify(tourGuide)}
+                onDelete={handleDelete}
+              />
+            ),
+          });
+        }
+        if (!unmounted) {
+          setTotalElements(response.data.totalElements);
+          setTableRows(tableDataArr);
+        }
+      } else {
+        console.error(response?.data);
+      }
+      if (!unmounted) setIsLoading(false);
+    };
 
-  const updateSubmit = () => {};
+    fetchAndSet();
 
-  const handleUpdateClear = () => {};
+    return () => {
+      unmounted = true;
+    };
+  }, [pagination, refresh]);
 
   return (
     <React.Fragment>
@@ -141,17 +195,11 @@ const TourGuides = () => {
         Tour Guides
       </Typography>
       <Grid container spacing={2}>
-        <Grid item xs={10}>
+        <Grid item xs={12}>
           <SearchBar
             onSearch={handleSearch}
-            placeholderText="Search Product..."
+            placeholderText="Search Tour Guides..."
           />
-        </Grid>
-        <Grid item xs={1}>
-          <AddButton onClick={() => setShowPopup(true)} />
-        </Grid>
-        <Grid item xs={1}>
-          <ReportButton />
         </Grid>
       </Grid>
 
@@ -191,138 +239,36 @@ const TourGuides = () => {
 
       {/* custom popup */}
       <Popup
-        title="Add TourGuides"
+        title="Verify Tour Guides"
         width={800}
         show={showPopup}
         onClose={handlePopupClose}
       >
         <Box sx={{ mb: 1 }}>
           <form onSubmit={handleSubmit}>
-            <Box sx={{ mb: 1 }}>
-              <TextField
-                name="name"
-                variant="filled"
-                label="Product Name"
-                fullWidth
-                value={inputs.name}
-                onChange={(e) =>
-                  setInputs({
-                    ...inputs,
-                    name: e.target.value,
-                  })
-                }
-              />
-              {errors["name"] && (
-                <Typography color="error">{errors["name"]}</Typography>
-              )}
+            <Box sx={{ my: 1 }}>
+              <FormControl fullWidth>
+                <InputLabel id="demo-simple-select-label">
+                  Set Verification
+                </InputLabel>
+                <Select
+                  labelId="demo-simple-select-label"
+                  id="demo-simple-select"
+                  label="Set Verification"
+                  value={inputs.tourGuide.isVerified}
+                  onChange={(e) =>
+                    setInputs({
+                      ...inputs,
+                      tourGuide: { isVerified: e.target.value },
+                    })
+                  }
+                >
+                  <MenuItem value={true}>Yes</MenuItem>
+                  <MenuItem value={false}>No</MenuItem>
+                </Select>
+              </FormControl>
             </Box>
-            <Box sx={{ mb: 1 }}>
-              <TextField
-                name="description"
-                variant="filled"
-                label="Product Description"
-                fullWidth
-                value={inputs.description}
-                onChange={(e) =>
-                  setInputs({
-                    ...inputs,
-                    description: e.target.value,
-                  })
-                }
-              />
-              {errors["description"] && (
-                <Typography color="error">{errors["description"]}</Typography>
-              )}
-            </Box>
-            <Box sx={{ mb: 1 }}>
-              <TextField
-                name="price"
-                variant="filled"
-                label="Product Price"
-                fullWidth
-                value={inputs.price}
-                type="number"
-                InputProps={{ inputProps: { min: 0 }, shrink: "true" }}
-                onChange={(e) =>
-                  setInputs({
-                    ...inputs,
-                    price: e.target.value,
-                  })
-                }
-              />
-              {errors["price"] && (
-                <Typography color="error">{errors["price"]}</Typography>
-              )}
-            </Box>
-
-            <Box sx={{ mb: 1 }}>
-              <TextField
-                name="unit"
-                variant="filled"
-                label="Units"
-                fullWidth
-                value={inputs.unit}
-                type="number"
-                InputProps={{ inputProps: { min: 0 }, shrink: "true" }}
-                onChange={(e) =>
-                  setInputs({
-                    ...inputs,
-                    unit: e.target.value,
-                  })
-                }
-              />
-              {errors["unit"] && (
-                <Typography color="error">{errors["unit"]}</Typography>
-              )}
-            </Box>
-
-            <Box sx={{ mb: 1 }}>
-              <TextField
-                name="unitAmount"
-                variant="filled"
-                label="Unit Amount"
-                fullWidth
-                value={inputs.unitAmount}
-                type="number"
-                InputProps={{ inputProps: { min: 0 }, shrink: "true" }}
-                onChange={(e) =>
-                  setInputs({
-                    ...inputs,
-                    unitAmount: e.target.value,
-                  })
-                }
-              />
-              {errors["unitAmount"] && (
-                <Typography color="error">{errors["unitAmount"]}</Typography>
-              )}
-            </Box>
-            <Box sx={{ mb: 1 }}>
-              <Typography>File</Typography>
-              <input
-                name="file"
-                type="file"
-                onChange={(e) => {
-                  const file = e.target.files[0];
-                  setInputs({
-                    ...inputs,
-                    file: file,
-                  });
-                }}
-              />
-              {errors["file"] && (
-                <Typography color="error">{errors["file"]}</Typography>
-              )}
-            </Box>
-
             <Box sx={{ mb: 2, display: "flex", justifyContent: "flex-end" }}>
-              <Button
-                type="reset"
-                variant="contained"
-                onClick={handleClear}
-                sx={{ py: 2, px: 5, mr: 2, backgroundColor: colors.grey }}
-              >
-                Clear
-              </Button>
               <Button
                 type="submit"
                 variant="contained"
@@ -333,163 +279,6 @@ const TourGuides = () => {
               </Button>
             </Box>
           </form>
-        </Box>
-      </Popup>
-
-      {/* custom popup */}
-      <Popup
-        title="Update TourGuides"
-        width={800}
-        show={showUpdatePopup}
-        onClose={handleUpdatePopupClose}
-      >
-        <Box sx={{ mb: 1 }}>
-          <form onSubmit={updateSubmit}>
-            <Box sx={{ mb: 1 }}>
-              <TextField
-                name="name"
-                variant="filled"
-                label="Product Name"
-                fullWidth
-                value={inputs.name}
-                onChange={(e) =>
-                  setInputs({
-                    ...inputs,
-                    name: e.target.value,
-                  })
-                }
-              />
-              {errors["name"] && (
-                <Typography color="error">{errors["name"]}</Typography>
-              )}
-            </Box>
-            <Box sx={{ mb: 1 }}>
-              <TextField
-                name="description"
-                variant="filled"
-                label="Product Description"
-                fullWidth
-                value={inputs.description}
-                onChange={(e) =>
-                  setInputs({
-                    ...inputs,
-                    description: e.target.value,
-                  })
-                }
-              />
-              {errors["description"] && (
-                <Typography color="error">{errors["description"]}</Typography>
-              )}
-            </Box>
-            <Box sx={{ mb: 1 }}>
-              <TextField
-                name="price"
-                variant="filled"
-                label="Product Price"
-                fullWidth
-                value={inputs.price}
-                type="number"
-                InputProps={{ inputProps: { min: 0 }, shrink: "true" }}
-                onChange={(e) =>
-                  setInputs({
-                    ...inputs,
-                    price: e.target.value,
-                  })
-                }
-              />
-              {errors["price"] && (
-                <Typography color="error">{errors["price"]}</Typography>
-              )}
-            </Box>
-            <Box sx={{ mb: 1 }}>
-              <TextField
-                name="unit"
-                variant="filled"
-                label="Units"
-                fullWidth
-                value={inputs.unit}
-                type="number"
-                InputProps={{ inputProps: { min: 0 }, shrink: "true" }}
-                onChange={(e) =>
-                  setInputs({
-                    ...inputs,
-                    unit: e.target.value,
-                  })
-                }
-              />
-              {errors["unit"] && (
-                <Typography color="error">{errors["unit"]}</Typography>
-              )}
-            </Box>
-            <Box sx={{ mb: 1 }}>
-              <TextField
-                name="unitAmount"
-                variant="filled"
-                label="Unit Amount"
-                fullWidth
-                value={inputs.unitAmount}
-                type="number"
-                InputProps={{ inputProps: { min: 0 }, shrink: "true" }}
-                onChange={(e) =>
-                  setInputs({
-                    ...inputs,
-                    unitAmount: e.target.value,
-                  })
-                }
-              />
-              {errors["unitAmount"] && (
-                <Typography color="error">{errors["unitAmount"]}</Typography>
-              )}
-            </Box>
-
-            <Box sx={{ mb: 2, display: "flex", justifyContent: "flex-end" }}>
-              <Button
-                type="reset"
-                variant="contained"
-                onClick={handleUpdateClear}
-                sx={{ py: 2, px: 5, mr: 2, backgroundColor: colors.grey }}
-              >
-                Clear
-              </Button>
-              <Button
-                type="submit"
-                variant="contained"
-                sx={{ py: 2, px: 5 }}
-                disabled={isLoading}
-              >
-                {isLoading ? <CircularProgress color="secondary" /> : "Save"}
-              </Button>
-            </Box>
-          </form>
-        </Box>
-      </Popup>
-      {/* custom popup */}
-      <Popup
-        width={700}
-        show={showDeletePopup}
-        onClose={handleDeletePopupClose}
-      >
-        <Box sx={{ mb: 1 }}>
-          <Box sx={{ mt: 2 }}>
-            {loading ? (
-              <Box
-                sx={{
-                  width: "100%",
-                  mt: "3%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <CircularProgress sx={{ mr: 5 }} />
-                <Typography sx={{ mb: 2 }} variant="h3">
-                  LOADING
-                </Typography>
-              </Box>
-            ) : (
-              <ProductDelete />
-            )}
-          </Box>
         </Box>
       </Popup>
     </React.Fragment>

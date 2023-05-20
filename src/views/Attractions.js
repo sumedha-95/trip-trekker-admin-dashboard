@@ -125,8 +125,19 @@ const Attractions = () => {
         for (const attraction of response.data.content) {
           tableDataArr.push({
             name: attraction.name,
-            open: attraction.openHours.open.substring(11, 16),
-            close: attraction.openHours.close.substring(11, 16),
+            open: new Date(attraction.openHours?.open).toLocaleString("en-US", {
+              hour: "numeric",
+              minute: "numeric",
+              hour12: true,
+            }),
+            close: new Date(attraction.openHours?.close).toLocaleString(
+              "en-US",
+              {
+                hour: "numeric",
+                minute: "numeric",
+                hour12: true,
+              }
+            ),
             accessibilityOptions: attraction.accessibilityOptions
               .map((item) => item)
               .join(", "),

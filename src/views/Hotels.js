@@ -31,6 +31,7 @@ import ProductDelete from "../components/common/ProductDelete";
 import { useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import {
+  AddPromotionImage,
   createHotel,
   deleteHotel,
   getPaginatedHotels,
@@ -42,6 +43,7 @@ import { DesktopTimePicker } from "@mui/x-date-pickers";
 import Hotel from "../models/hotel";
 import moment from "moment-timezone";
 import dayjs from "dayjs";
+import FileButton from "../components/common/FileButton";
 
 //table columns
 const tableColumns = [
@@ -99,6 +101,7 @@ const Hotels = () => {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
+  const [showImagePopup, setShowImagePopup] = useState(false);
   const [showUpdatePopup, setShowUpdatePopup] = useState(false);
   const [showDeletePopup, setShowDeletePopup] = useState(false);
   const [pagination, setPagination] = useState({
@@ -124,6 +127,7 @@ const Hotels = () => {
   };
 
   const handlePopupClose = () => setShowPopup(false);
+   const handleImagePopupClose = () => setShowImagePopup(false);
   const handleUpdatePopupClose = () => setShowUpdatePopup(false);
   const handleDeletePopupClose = () => setShowDeletePopup(false);
 
@@ -173,6 +177,7 @@ const Hotels = () => {
         const response = await deleteHotel(id);
 
         if (response.success) {
+          setRefresh(!refresh);
           response?.data?.message &&
             popAlert("Success!", response?.data?.message, "success").then(
               (res) => {
@@ -270,6 +275,32 @@ const Hotels = () => {
     setLoading(false);
   };
 
+    
+  const handleImageSubmit = async (e) => {
+  e.preventDefault();
+  setLoading(true);
+ 
+  try {
+    const response = await AddPromotionImage(inputs);
+
+    if (response.success) {
+      setRefresh(!refresh);
+      popAlert('Success!', 'Successfully Added the Promotion Images!', 'success').then(
+        (res) => {
+          setShowPopup(false);
+        }
+      );
+    } else {
+      response?.data?.message &&
+        popAlert('Error!', response?.data?.message, 'error');
+      response?.data?.data && setErrors(response.data.data);
+    }
+  } catch (error) {
+    console.error(error);
+  }
+
+  setLoading(false);
+};
 
   const handleClear = () => {};
 
@@ -302,7 +333,7 @@ const Hotels = () => {
         Hotel
       </Typography>
       <Grid container spacing={2}>
-        <Grid item xs={10}>
+        <Grid item xs={9}>
           <SearchBar
             onSearch={handleSearch}
             placeholderText="Search Product..."
@@ -310,6 +341,9 @@ const Hotels = () => {
         </Grid>
         <Grid item xs={1}>
           <AddButton onClick={() => setShowPopup(true)} />
+        </Grid>
+        <Grid item xs={1}>
+          <FileButton onClick={() => setShowImagePopup(true)}/>
         </Grid>
         <Grid item xs={1}>
           <ReportButton />
@@ -375,6 +409,26 @@ const Hotels = () => {
               />
               {errors["name"] && (
                 <Typography color="error">{errors["name"]}</Typography>
+              )}
+            </Box>
+            <Box sx={{ mb: 1 }}>
+              <TextField
+                name="name"
+                variant="filled"
+                label="Hotel Description"
+                fullWidth
+                multiline
+                rows={6}
+                value={inputs.description}
+                onChange={(e) =>
+                  setInputs({
+                    ...inputs,
+                    description: e.target.value,
+                  })
+                }
+              />
+              {errors["description"] && (
+                <Typography color="error">{errors["description"]}</Typography>
               )}
             </Box>
 
@@ -896,6 +950,56 @@ const Hotels = () => {
           </Box>
         </Box>
       </Popup>
+
+      {/* Upload images */}
+      <Popup
+        title="Upload Promotion Images"
+        width={800}
+        show={showImagePopup}
+        onClose={handleImagePopupClose}
+      >
+        <Box sx={{ mb: 1 }}>
+          <form onSubmit={handleImageSubmit}>
+            <Box sx={{ mb: 1 }}>
+              <Typography>File</Typography>
+              <input
+                name="images"
+                type="file"
+                multiple
+                onChange={(e) => {
+                  setInputs({
+                    ...inputs,
+                    files: Array.from(e.target.files),
+                  });
+                }}
+              />
+              {errors["file"] && (
+                <Typography color="error">{errors["file"]}</Typography>
+              )}
+            </Box>
+
+            <Box sx={{ mb: 2, display: "flex", justifyContent: "flex-end" }}>
+              <Button
+                type="reset"
+                variant="contained"
+                onClick={handleClear}
+                sx={{ py: 2, px: 5, mr: 2, backgroundColor: colors.grey }}
+              >
+                Clear
+              </Button>
+              <Button
+                type="submit"
+                variant="contained"
+                sx={{ py: 2, px: 5 }}
+                disabled={loading}
+              >
+                {loading ? <CircularProgress color="secondary" /> : "Save"}
+              </Button>
+            </Box>
+          </form>
+        </Box>
+      </Popup>
+
     </React.Fragment>
   );
 };

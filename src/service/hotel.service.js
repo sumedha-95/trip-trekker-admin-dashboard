@@ -3,7 +3,6 @@ import { buildResponse } from "../utils/responseBuilder";
 
 export const createHotel = async (data) => {
   const { files } = data;
-console.log(files);
   const formData = new FormData();
   formData.append("strigifiedBody", JSON.stringify(data));
   files.forEach((file) => {
@@ -56,7 +55,7 @@ export const deleteHotel = async (hotelId) => {
   return response;
 };
 
-export const updateHotel = async (hotelId, data) => {
+export const updateHotel = async ( data ,hotelId ) => {
   const { files } = data;
 
   const formData = new FormData();
@@ -72,6 +71,27 @@ export const updateHotel = async (hotelId, data) => {
     })
     .catch((err) => {
       console.log("error", err.response.data);
+      return buildResponse(false, err.response.data, err.response.status);
+    });
+
+  return response;
+};
+
+export const AddPromotionImage = async (hotelId, data) => {
+  const { promotionImages } = data;
+  const formData = new FormData();
+   
+  promotionImages.forEach((file) => {
+    formData.append("promotionImages", file);
+  });
+
+  const response = await getApiForFormData()
+    .post(`/hotels/${hotelId}/promotion`, formData) 
+    .then((res) => {
+      return buildResponse(true, res.data);
+    })
+    .catch((err) => {
+      console.log("errr", err.response.data);
       return buildResponse(false, err.response.data, err.response.status);
     });
 

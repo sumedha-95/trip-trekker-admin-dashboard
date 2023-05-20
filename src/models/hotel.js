@@ -1,5 +1,6 @@
 const Hotel = {
     name: "",
+    description:"",
     registrationNumber: "",
     address: "",
     contactNumber: "",
